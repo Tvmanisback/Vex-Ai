@@ -30,7 +30,7 @@ AI responses can be inaccurate or out of date. Verify important information befo
 
 ## 🛠️ Having trouble?
 
-- **The website is blank:** refresh the page after a moment. If it stays blank, check the project's latest deployment status in the repository's **Actions** tab.
+- **The website is blank:** the published page may be serving the Vite source files instead of a production build. The site must be built with `npm run build`, and GitHub Pages must publish the generated `dist` folder.
 - **Can't sign in with Google:** Google sign-in must be enabled and configured for the site.
 - **Can't create an account:** check that your email address is correct and look for an email confirmation message.
 - **VEX doesn't reply:** the chat service may be temporarily unavailable or have reached an API quota.
