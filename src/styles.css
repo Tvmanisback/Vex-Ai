@@ -3,3 +3,33 @@
 @media(max-width:1000px){.auth-layout{grid-template-columns:minmax(0,.85fr) minmax(440px,1fr)}.auth-art{padding:30px}.auth-panel{padding:60px 36px}.art-center{padding-left:0}.art-center h1{font-size:48px}.suggestion-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.suggestion-card{min-height:120px}.sidebar{width:225px}.welcome{max-width:650px}}
 @media(max-width:760px){.auth-layout{display:block;min-height:100svh}.auth-art{display:none}.auth-panel{min-height:100svh;padding:76px 24px 72px;background:radial-gradient(ellipse at 50% 0%,#172746 0,#090e19 42%)}.mobile-brand{display:flex;align-items:center;gap:9px;position:absolute;top:24px;left:24px;font-family:'Space Grotesk',sans-serif;letter-spacing:1.5px;font-size:13px}.mobile-brand .orbit-mark{width:29px;height:29px}.mobile-brand .orbit-core{width:12px;height:12px}.mobile-brand .orbit-ring{width:24px;height:12px}.mobile-brand .orbit-ring-two{width:25px;height:14px}.auth-card{max-width:410px}.auth-bottom{left:24px;right:24px;bottom:17px}.app-shell{min-height:100svh}.sidebar{position:fixed;left:0;top:0;bottom:0;min-height:100svh;width:275px;transform:translateX(-105%);transition:transform .25s ease;box-shadow:none}.sidebar.sidebar-open{transform:translateX(0);box-shadow:20px 0 50px #0005}.sidebar-scrim{display:block;position:fixed;inset:0;z-index:4;background:#02050bb8;border:0}.mobile-close{display:grid;place-items:center;margin-left:auto;border:0;background:transparent;color:#92a5c2}.menu-button{display:grid}.app-header{height:59px;padding:0 13px}.header-left,.header-right{gap:9px}.secure-label{font-size:0;gap:0}.secure-label svg{width:17px;height:17px}.header-divider{height:16px}.model-label{font-size:9px}.conversation{padding:30px 20px 12px}.welcome{margin-top:0}.welcome-emblem{width:65px;height:65px;border-radius:20px;margin-bottom:24px}.welcome h1{font-size:38px;letter-spacing:-1.8px}.welcome-copy{font-size:11px}.desktop-break{display:none}.suggestion-grid{gap:9px;margin-top:27px}.suggestion-card{min-height:120px;padding:13px 11px;gap:8px}.suggestion-card b{font-size:10px}.suggestion-card small{font-size:9px}.composer-wrap{padding:8px 13px 13px}.composer{padding:10px 10px 8px}.composer textarea{font-size:12px}.disclaimer{font-size:8px}.conversation.has-messages{padding:24px 16px 10px}.message-list{gap:22px}.message-text{font-size:12px}.auth-heading h2{font-size:28px}}
 @media(max-width:390px){.auth-panel{padding-left:18px;padding-right:18px}.auth-bottom{left:18px;right:18px}.auth-bottom span:last-child{letter-spacing:.5px}.welcome h1{font-size:33px}.suggestion-grid{grid-template-columns:1fr 1fr}.suggestion-card{min-height:125px}.model-label{max-width:94px;white-space:nowrap}.header-right{gap:6px}}
+
+
+/* Readability and saved conversation history */
+.message-text{font-size:16px;line-height:1.9}
+.message-name{font-size:12px}
+.composer textarea{font-size:16px;line-height:1.7}
+.chat-error{font-size:14px}
+.disclaimer{font-size:11px}
+.welcome-copy{font-size:14px}
+.suggestion-card b{font-size:13px}
+.suggestion-card small{font-size:11px}
+.new-chat{font-size:13px}
+.side-label{font-size:10px}
+.side-link{font-size:13px}
+.chat-history-list{display:flex;flex-direction:column;gap:3px;max-height:34vh;overflow-y:auto;margin:0 -2px 4px;padding:0 2px}
+.chat-history-item{display:flex;align-items:center;gap:9px;width:100%;min-width:0;padding:10px 9px;border:1px solid transparent;border-radius:8px;background:transparent;color:#94a5bf;text-align:left;font-size:12px}
+.chat-history-item svg{flex:none;color:#8298ba}
+.chat-history-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-history-item:hover,.chat-history-item.active{background:#172338;color:#e4f0ff;border-color:#263752}
+.history-empty{padding:8px 10px;color:#7586a0;font-size:11px;line-height:1.6}
+.theme-light .chat-history-item{color:#596c88}
+.theme-light .chat-history-item:hover,.theme-light .chat-history-item.active{background:#e8effb;color:#263d61;border-color:#d6e2f4}
+.theme-light .history-empty{color:#7888a0}
+@media(max-width:760px){
+  .message-text{font-size:16px;line-height:1.85}
+  .composer textarea{font-size:16px}
+  .chat-history-list{max-height:27vh}
+  .suggestion-card b{font-size:12px}
+  .suggestion-card small{font-size:10px}
+}
