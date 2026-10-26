@@ -70,3 +70,19 @@
 .theme-light .markdown-content td,.theme-light .markdown-content th{border-color:#ccd7e8}
 .theme-light .markdown-content tr:nth-child(even){background:#f0f4fb}
 @media(max-width:760px){.markdown-content pre{font-size:12px;padding:12px;border-radius:9px}.markdown-content h1{font-size:1.6em}.markdown-content h2{font-size:1.35em}}
+
+
+/* Language-labeled code cards with one-tap copy */
+.markdown-content .code-block{max-width:100%;min-width:0;overflow:hidden;margin:15px 0 18px;border:1px solid #2b3c57;border-radius:12px;background:#080d16}
+.markdown-content .code-block-header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px;padding:7px 11px 7px 14px;background:#121b2a;border-bottom:1px solid #26364d}
+.markdown-content .code-language{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;font-weight:700;color:#a8b9d3;text-transform:lowercase}
+.markdown-content .copy-code-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:29px;padding:5px 9px;border:1px solid #3a4d68;border-radius:7px;background:#1b2940;color:#e4edfc;font-size:11px;font-weight:650;cursor:pointer}
+.markdown-content .copy-code-button:hover{background:#263852;border-color:#60799b}
+.markdown-content .copy-code-button:focus-visible{outline:2px solid #9ebfff;outline-offset:2px}
+.markdown-content .code-block pre{margin:0;border:0;border-radius:0;background:#080d16;padding:15px;max-width:100%;overflow:auto;white-space:pre;tab-size:2;-webkit-overflow-scrolling:touch}
+.markdown-content .code-block pre code{display:block;white-space:pre;overflow-wrap:normal;word-break:normal;background:transparent;border:0;padding:0;color:#e5edff;font-size:13px;line-height:1.7}
+.theme-light .markdown-content .code-block{border-color:#293a54;background:#101827}
+.theme-light .markdown-content .code-block-header{background:#192437;border-bottom-color:#293a54}
+.theme-light .markdown-content .code-language{color:#b7c8e2}
+.theme-light .markdown-content .copy-code-button{background:#25344b;border-color:#435873;color:#f0f5ff}
+@media(max-width:760px){.markdown-content .code-block{border-radius:9px}.markdown-content .code-block pre{padding:12px}.markdown-content .code-block pre code{font-size:12px}}
