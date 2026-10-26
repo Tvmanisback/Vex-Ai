@@ -201,3 +201,16 @@
   .ui-mode-ipad .suggestion-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ui-mode-ipad .composer-wrap { width: calc(100% - 24px); }
 }
+
+
+/* Chat attachments */
+.hidden-file-input{display:none}
+.composer-actions{display:flex;align-items:center;gap:8px}
+.attach-button{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);font-size:12px;font-weight:650}
+.attach-button:hover{border-color:#8ecbff66;background:#14233a}
+.attachment-tray{display:flex;flex-wrap:wrap;gap:7px;padding:9px 4px 0}
+.attachment-chip,.attached-message-files span{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:6px 9px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);font-size:11px;overflow-wrap:anywhere}
+.attachment-chip button{display:grid;place-items:center;border:0;background:transparent;color:var(--muted);padding:0 2px}
+.attached-message-files{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.attached-message-files span{background:#15233a}
+@media(max-width:520px){.composer-tools>span{max-width:60%;font-size:10px}.attach-button{padding:8px}.attach-button span{display:none}}
