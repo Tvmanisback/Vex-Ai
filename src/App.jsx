@@ -7,7 +7,7 @@ import {
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Copy } from 'lucide-react';
+import { Copy, Download } from 'lucide-react';
 
 const suggestions = [
   { icon: Code2, title: 'Help me code', text: 'Debug code, explain concepts, and build projects.' },
@@ -18,6 +18,31 @@ const suggestions = [
 
 function CodeBlock({ language, code, children }) {
   const [copied, setCopied] = useState(false);
+
+  function downloadCode() {
+    const extensions = {
+      javascript: 'js', js: 'js', jsx: 'jsx', typescript: 'ts', ts: 'ts', tsx: 'tsx',
+      python: 'py', py: 'py', html: 'html', css: 'css', json: 'json', xml: 'xml',
+      markdown: 'md', md: 'md', text: 'txt', txt: 'txt', plaintext: 'txt',
+      bash: 'sh', sh: 'sh', shell: 'sh', sql: 'sql', yaml: 'yml', yml: 'yml',
+      java: 'java', c: 'c', cpp: 'cpp', 'c++': 'cpp', csharp: 'cs', cs: 'cs',
+      go: 'go', rust: 'rs', rs: 'rs', php: 'php', ruby: 'rb', rb: 'rb',
+      swift: 'swift', kotlin: 'kt', kt: 'kt', dart: 'dart', r: 'r',
+      powershell: 'ps1', ps1: 'ps1', ini: 'ini', toml: 'toml', csv: 'csv',
+      diff: 'diff', dockerfile: 'Dockerfile', makefile: 'Makefile'
+    };
+    const ext = extensions[String(language || '').toLowerCase()] || 'txt';
+    const filename = `vex-generated.${ext}`;
+    const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
 
   async function copyCode() {
     try {
@@ -47,6 +72,7 @@ function CodeBlock({ language, code, children }) {
         {copied ? <Check size={14} /> : <Copy size={14} />}
         {copied ? 'Copied!' : 'Copy code'}
       </button>
+      <button type="button" className="copy-code-button" onClick={downloadCode} aria-label="Download generated file"><Download size={14}/> Download</button>
     </div>
     <pre><code className={"language-" + language}>{children}</code></pre>
   </div>;
