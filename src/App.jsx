@@ -130,6 +130,30 @@ function AuthScreen() {
     }
   }
 
+  async function yapinSignIn() {
+    setError(''); setNotice('');
+    if (!isSupabaseConfigured) {
+      setError('Connect Supabase first, then configure Yapin’ under Authentication → Sign In / Providers → Custom Providers.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'custom:yapin',
+        options: { redirectTo: window.location.href.split('#')[0].split('?')[0] },
+      });
+      if (authError) throw authError;
+    } catch (e) {
+      const message = e?.message || 'Yapin’ sign-in could not start.';
+      if (/provider.*not enabled|unsupported provider|invalid.*provider/i.test(message)) {
+        setError('Yapin’ sign-in is not configured yet. In Supabase → Authentication → Sign In / Providers → Custom Providers, create the OAuth provider with identifier “yapin” and authorization URL https://www.yapin.gg/oauth/authorize.');
+      } else {
+        setError(message);
+      }
+      setBusy(false);
+    }
+  }
+
   return <main className="auth-layout">
     <section className="auth-art">
       <div className="art-grid" />
@@ -157,6 +181,9 @@ function AuthScreen() {
         </div>
         <button className="google-button" onClick={googleSignIn} type="button" disabled={busy}>
           <GoogleIcon /> Continue with Google
+        </button>
+        <button className="google-button yapin-button" onClick={yapinSignIn} type="button" disabled={busy}>
+          <span className="yapin-mark" aria-hidden="true">Y</span> Login with Yapin’
         </button>
         <div className="divider"><span /> <small>OR WITH EMAIL</small> <span /></div>
         <form onSubmit={submit} className="auth-form">
