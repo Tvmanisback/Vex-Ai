@@ -207,7 +207,7 @@ GENERAL RESPONSE STYLE:
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
           signal: AbortSignal.timeout(15000),
           body: JSON.stringify({
-            model: images.length ? "qwen/qwen3.8-27b" : "llama-3.1-8b-instant",
+            model: images.length ? "qwen/qwen3.8-27b" : "qwen/qwen3.8-27b",
             messages: [
               { role: "system", content: "Return only a short chat title of 3–6 words." },
               { role: "user", content: titlePrompt },
@@ -261,7 +261,7 @@ GENERAL RESPONSE STYLE:
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
         signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
-          model: images.length ? "qwen/qwen3.8-27b" : "llama-3.1-8b-instant",
+          model: images.length ? "qwen/qwen3.8-27b" : "qwen/qwen3.8-27b",
           messages,
           temperature: 0.7,
           max_completion_tokens: 1800,
