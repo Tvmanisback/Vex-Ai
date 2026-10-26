@@ -80,31 +80,48 @@ function CodeBlock({ language, code, children }) {
 }
 
 function ProjectZipButton({ text }) {
-  const [busy, setBusy] = useState(false);
-  const files = [];
-  const pattern = /(?:^|\n)(?:\*\*|###?\s*)?(?:File:\s*)?([\x60][^\n\x60]+[\x60]|[A-Za-z0-9_.@/-]+\.[A-Za-z0-9_-]+)(?:\*\*)?\s*\n\x60\x60\x60([\w.+-]*)\s*\n([\s\S]*?)\n\x60\x60\x60/g;
-  let match;
-  while ((match = pattern.exec(text)) !== null) {
-    const filename = match[1].replace(/^\x60|\x60$/g, '').trim();
-    if (!filename || filename.includes(' ') || filename.startsWith('http')) continue;
-    files.push({ filename, content: match[3] });
-  }
-  if (!files.length) return null;
-  async function downloadZip() {
-    setBusy(true);
-    try {
-      const zip = new JSZip();
-      for (const file of files) zip.file(file.filename, file.content);
-      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url; link.download = 'vex-project.zip';
-      document.body.appendChild(link); link.click(); link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch (error) { console.error('ZIP creation failed:', error); }
-    finally { setBusy(false); }
-  }
-  return <div className="project-download"><button type="button" className="copy-code-button" onClick={downloadZip} disabled={busy}><FileArchive size={14}/>{busy ? 'Creating ZIP…' : 'Download project ZIP (' + files.length + ' files)'}</button></div>;
+  const [zipUrl, setZipUrl] = useState('');
+  const [fileCount, setFileCount] = useState(0);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    let active = true;
+    let createdUrl = '';
+    async function buildZip() {
+      const files = [];
+      const pattern = /(?:^|\\n)(?:\\*\\*|###?\\s*)?(?:File:\\s*)?([\\x60][^\\n\\x60]+[\\x60]|[A-Za-z0-9_.@/-]+\\.[A-Za-z0-9_-]+)(?:\\*\\*)?\\s*\\n\\x60\\x60\\x60([\\w.+-]*)\\s*\\n([\\s\\S]*?)\\n\\x60\\x60\\x60/g;
+      let match;
+      while ((match = pattern.exec(text || '')) !== null) {
+        const filename = match[1].replace(/^\\x60|\\x60$/g, '').trim();
+        if (!filename || filename.includes(' ') || filename.startsWith('http')) continue;
+        if (files.some(file => file.filename === filename)) continue;
+        files.push({ filename, content: match[3] });
+      }
+      if (!files.length) return;
+      try {
+        const zip = new JSZip();
+        for (const file of files) zip.file(file.filename, file.content);
+        const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+        if (!active) return;
+        createdUrl = URL.createObjectURL(blob);
+        setZipUrl(createdUrl);
+        setFileCount(files.length);
+      } catch (e) {
+        console.error('VEX project ZIP creation failed:', e);
+        if (active) setError('VEX could not package this project into a ZIP. Please try asking again.');
+      }
+    }
+    buildZip();
+    return () => {
+      active = false;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [text]);
+  if (!zipUrl && !error) return null;
+  if (error) return <div className="project-download" role="status">{error}</div>;
+  return <div className="project-download" role="status">
+    <div className="project-zip-message"><FileArchive size={18}/><span><strong>I made the ZIP for you!</strong><small>{fileCount} project files packaged and ready.</small></span></div>
+    <a className="copy-code-button project-zip-link" href={zipUrl} download="vex-project.zip"><Download size={14}/> Download vex-project.zip</a>
+  </div>;
 }
 function OrbitMark({ small = false }) {
   return <span className={`orbit-mark ${small ? 'orbit-mark-small' : ''}`} aria-hidden="true">
