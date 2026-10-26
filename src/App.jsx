@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowUp, Atom, Check, ChevronDown, Code2, Compass, Eye, EyeOff,
   GraduationCap, LogOut, Menu, MessageCircle, Moon, Plus, Settings2,
-  ShieldCheck, Sparkles, Sun, Video, BriefcaseBusiness, X
+  ShieldCheck, Sparkles, Sun, Video, BriefcaseBusiness, X, Smartphone, Monitor
 } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import ReactMarkdown from 'react-markdown';
@@ -180,6 +180,17 @@ function GoogleIcon() {
 }
 
 function ChatApp({ session }) {
+  const [uiMode, setUiMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('vex-ui-mode');
+      if (saved === 'mobile' || saved === 'pc') return saved;
+    } catch (_) {}
+    return window.matchMedia('(max-width: 760px)').matches ? 'mobile' : 'pc';
+  });
+  useEffect(() => {
+    try { localStorage.setItem('vex-ui-mode', uiMode); } catch (_) {}
+  }, [uiMode]);
+
   const [profile, setProfile] = useState(null);
   const [messages, setMessages] = useState([]);
   const [conversations, setConversations] = useState([]);
@@ -315,7 +326,7 @@ function ChatApp({ session }) {
   async function signOut() { await supabase.auth.signOut(); }
   const username = profile?.username || session.user.email?.split('@')[0] || 'friend';
 
-  return <main className={`app-shell ${dark ? 'theme-dark' : 'theme-light'}`}>
+  return <main className={`app-shell ui-mode-${uiMode} ${dark ? 'theme-dark' : 'theme-light'}`}>
     <aside className={`sidebar ${mobileSidebar ? 'sidebar-open' : ''}`}>
       <div className="sidebar-brand"><OrbitMark small /><span>FROST<span className="brand-ai">AI</span></span><button className="mobile-close" onClick={() => setMobileSidebar(false)}><X size={18}/></button></div>
       <button className="new-chat" onClick={startNewChat}><Plus size={17}/> New chat</button>
@@ -340,7 +351,7 @@ function ChatApp({ session }) {
     </aside>
     {mobileSidebar && <button className="sidebar-scrim" onClick={() => setMobileSidebar(false)} aria-label="Close navigation" />}
     <section className="chat-area">
-      <header className="app-header"><div className="header-left"><button className="menu-button" onClick={() => setMobileSidebar(true)}><Menu size={20}/></button><div className="vex-mini"><OrbitMark small/><span>VEX <b>AI</b></span></div><span className="header-divider"/><span className="model-label"><span className="live-dot"/> VEX assistant</span></div><div className="header-right"><span className="secure-label"><ShieldCheck size={14}/> Private space</span><button className="header-icon" onClick={() => setDark(v => !v)} title="Toggle appearance">{dark ? <Sun size={17}/> : <Moon size={17}/>}</button></div></header>
+      <header className="app-header"><div className="header-left"><button className="menu-button" onClick={() => setMobileSidebar(true)}><Menu size={20}/></button><div className="vex-mini"><OrbitMark small/><span>VEX <b>AI</b></span></div><span className="header-divider"/><span className="model-label"><span className="live-dot"/> VEX assistant</span></div><div className="header-right"><span className="secure-label"><ShieldCheck size={14}/> Private space</span><div className="ui-mode-switch" role="group" aria-label="Interface layout"><button type="button" className={uiMode === 'mobile' ? 'active' : ''} onClick={() => setUiMode('mobile')} title="Mobile layout" aria-label="Use mobile layout"><Smartphone size={15}/><span>Mobile</span></button><button type="button" className={uiMode === 'pc' ? 'active' : ''} onClick={() => setUiMode('pc')} title="Desktop layout" aria-label="Use desktop layout"><Monitor size={15}/><span>PC</span></button></div><button className="header-icon" onClick={() => setDark(v => !v)} title="Toggle appearance">{dark ? <Sun size={17}/> : <Moon size={17}/>}</button></div></header>
       <div className={`conversation ${messages.length ? 'has-messages' : ''}`}>
         {messages.length === 0 ? <div className="welcome">
           <div className="welcome-emblem"><OrbitMark/></div>
