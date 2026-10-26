@@ -13,6 +13,8 @@ alter table public.profiles enable row level security;
 
 -- Users may read their own profile only. Profile creation/updates happen through
 -- the trusted auth trigger, not direct client inserts.
+-- Drop first so this setup script can safely be run more than once.
+drop policy if exists "Users can read their own profile" on public.profiles;
 create policy "Users can read their own profile"
   on public.profiles for select
   to authenticated
