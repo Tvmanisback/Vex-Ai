@@ -323,6 +323,7 @@ function ChatApp({ session }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const [settingsUsername, setSettingsUsername] = useState('');
+  const [settingsCurrentPassword, setSettingsCurrentPassword] = useState('');
   const [settingsPassword, setSettingsPassword] = useState('');
   const [settingsNotice, setSettingsNotice] = useState('');
   const [settingsError, setSettingsError] = useState('');
@@ -521,12 +522,17 @@ function ChatApp({ session }) {
       if (profileError) throw new Error('Could not save username. Check profiles table permissions in Supabase.');
       const { error: metadataError } = await supabase.auth.updateUser({ data: { username: nextUsername } });
       if (metadataError) throw metadataError;
-      if (settingsPassword) {
+      if (settingsPassword || settingsCurrentPassword) {
+        if (!settingsCurrentPassword) throw new Error('Enter your current password to change it.');
+        if (!settingsPassword) throw new Error('Enter a new password.');
         if (settingsPassword.length < 8) throw new Error('New password must be at least 8 characters.');
+        if (settingsPassword === settingsCurrentPassword) throw new Error('Your new password must be different from your current password.');
+        const { error: verifyError } = await supabase.auth.signInWithPassword({ email: session.user.email, password: settingsCurrentPassword });
+        if (verifyError) throw new Error('Your current password is incorrect.');
         const { error: passwordError } = await supabase.auth.updateUser({ password: settingsPassword });
         if (passwordError) throw passwordError;
       }
-      setProfile({ ...(profile || {}), username: nextUsername }); setSettingsPassword(''); setSettingsNotice('Account settings saved.');
+      setProfile({ ...(profile || {}), username: nextUsername }); setSettingsCurrentPassword(''); setSettingsPassword(''); setSettingsNotice('Account settings saved.');
     } catch (e) { setSettingsError(e?.message || 'Could not save account settings.'); } finally { setSettingsBusy(false); }
   }
 
@@ -549,7 +555,7 @@ function ChatApp({ session }) {
       <div className="sidebar-bottom">
         <div className="plan-card"><div className="plan-icon"><Sparkles size={16}/></div><div><b>Your ideas, amplified.</b><p>Make room for what's next.</p></div></div>
         <button className="profile-button" onClick={() => setMenuOpen(v => !v)}><span className="avatar">{username.slice(0,1).toUpperCase()}</span><span className="profile-info"><b>{username}</b><small>{session.user.email}</small></span><ChevronDown size={16}/></button>
-        {menuOpen && <div className="profile-menu"><button onClick={() => { setSettingsUsername(username); setSettingsPassword(''); setSettingsNotice(''); setSettingsError(''); setAccountSettingsOpen(true); setMenuOpen(false); }}><Settings2 size={16}/> Account settings</button><button onClick={() => setDark(v => !v)}>{dark ? <Sun size={16}/> : <Moon size={16}/>} Switch appearance</button><button onClick={signOut}><LogOut size={16}/> Sign out</button></div>}
+        {menuOpen && <div className="profile-menu"><button onClick={() => { setSettingsUsername(username); setSettingsCurrentPassword(''); setSettingsPassword(''); setSettingsNotice(''); setSettingsError(''); setAccountSettingsOpen(true); setMenuOpen(false); }}><Settings2 size={16}/> Account settings</button><button onClick={() => setDark(v => !v)}>{dark ? <Sun size={16}/> : <Moon size={16}/>} Switch appearance</button><button onClick={signOut}><LogOut size={16}/> Sign out</button></div>}
       </div>
     </aside>
     {accountSettingsOpen && <div role="presentation" onClick={() => setAccountSettingsOpen(false)} style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.68)',display:'grid',placeItems:'center',padding:18}}>
@@ -558,7 +564,9 @@ function ChatApp({ session }) {
         <form onSubmit={saveAccountSettings} style={{display:'grid',gap:14,marginTop:16}}>
           <label>Email address<input value={session.user.email || ''} readOnly style={{display:'block',width:'100%',padding:12,marginTop:6,borderRadius:10}}/><small>Email changes are not available here.</small></label>
           <label>Username<input value={settingsUsername} onChange={e=>setSettingsUsername(e.target.value)} minLength={3} maxLength={24} pattern="[A-Za-z0-9_]{3,24}" required style={{display:'block',width:'100%',padding:12,marginTop:6,borderRadius:10}}/><small>3–24 letters, numbers, or underscores.</small></label>
-          <label>New password (optional)<input type="password" value={settingsPassword} onChange={e=>setSettingsPassword(e.target.value)} minLength={8} autoComplete="new-password" placeholder="Leave blank to keep current password" style={{display:'block',width:'100%',padding:12,marginTop:6,borderRadius:10}}/></label>
+          <label>Current password (required to change password)<input type="password" value={settingsCurrentPassword} onChange={e=>setSettingsCurrentPassword(e.target.value)} autoComplete="current-password" placeholder="Enter current password" style={{display:'block',width:'100%',padding:12,marginTop:6,borderRadius:10}}/></label>
+          <label>New password (optional)<input type="password" value={settingsPassword} onChange={e=>setSettingsPassword(e.target.value)} minLength={8} autoComplete="new-password" placeholder="Enter a new password" style={{display:'block',width:'100%',padding:12,marginTop:6,borderRadius:10}}/><small>At least 8 characters. Leave both password fields blank if you do not want to change it.</small></label>
+          <div style={{border:'1px solid #34445f',borderRadius:12,padding:14,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><div><b>Two-factor authentication (2FA)</b><p style={{margin:'5px 0 0',fontSize:13,opacity:.75}}>Add an extra layer of sign-in security.</p></div><button type="button" disabled title="Coming soon" style={{padding:'9px 12px',borderRadius:9,border:'1px solid #34445f',background:'transparent',color:'inherit',opacity:.7,cursor:'not-allowed'}}>Coming soon</button></div>
           {settingsError && <p role="alert">{settingsError}</p>}{settingsNotice && <p role="status">{settingsNotice}</p>}
           <button type="submit" disabled={settingsBusy}>{settingsBusy?'Saving…':'Save settings'}</button>
         </form>
