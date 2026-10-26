@@ -143,6 +143,9 @@ function GoogleIcon() {
 function ChatApp({ session }) {
   const [profile, setProfile] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -162,31 +165,100 @@ function ChatApp({ session }) {
     return () => { active = false; };
   }, [session.user.id]);
 
+  useEffect(() => {
+    let active = true;
+    async function loadConversations() {
+      setHistoryLoading(true);
+      const { data, error: loadError } = await supabase
+        .from('conversations')
+        .select('id,title,messages,updated_at')
+        .eq('user_id', session.user.id)
+        .order('updated_at', { ascending: false })
+        .limit(50);
+      if (active) {
+        if (!loadError && data) setConversations(data);
+        setHistoryLoading(false);
+      }
+    }
+    loadConversations();
+    return () => { active = false; };
+  }, [session.user.id]);
+
+  function startNewChat() {
+    setCurrentChatId(null);
+    setMessages([]);
+    setInput('');
+    setError('');
+    setMobileSidebar(false);
+  }
+
+  function openChat(chat) {
+    setCurrentChatId(chat.id);
+    setMessages(Array.isArray(chat.messages) ? chat.messages : []);
+    setInput('');
+    setError('');
+    setMobileSidebar(false);
+  }
+
+  async function saveChat(chatId, title, chatMessages) {
+    const row = {
+      id: chatId,
+      user_id: session.user.id,
+      title,
+      messages: chatMessages,
+      updated_at: new Date().toISOString(),
+    };
+    const { error: saveError } = await supabase.from('conversations').upsert(row);
+    if (saveError) {
+      console.error('Could not save VEX conversation:', saveError.message);
+      setError('Your reply worked, but chat saving failed. Run the saved-chat SQL setup in Supabase, then try again.');
+      return false;
+    }
+    setConversations(previous => [row, ...previous.filter(chat => chat.id !== chatId)].slice(0, 50));
+    return true;
+  }
+
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, sending]);
 
   async function sendMessage(text = input) {
     const prompt = text.trim();
     if (!prompt || sending) return;
     setError('');
-    const nextMessages = [...messages, { role: 'user', text: prompt }];
+    const isNewChat = !currentChatId;
+    const chatId = currentChatId || crypto.randomUUID();
+    const previousMessages = messages;
+    const nextMessages = [...previousMessages, { role: 'user', text: prompt }];
+    const fallbackTitle = prompt.split(/\\s+/).slice(0, 6).join(' ').slice(0, 64) || 'New chat';
+    setCurrentChatId(chatId);
     setMessages(nextMessages);
     setInput('');
     setSending(true);
+    let chatTitle = conversations.find(chat => chat.id === chatId)?.title || fallbackTitle;
     try {
-      const history = messages.slice(-12).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.text }] }));
+      const history = previousMessages.slice(-12).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.text }] }));
       const { data, error: invokeError } = await supabase.functions.invoke('vex-chat', { body: { message: prompt, history } });
       if (invokeError) throw invokeError;
       if (data?.error) throw new Error(data.error);
-      setMessages(current => [...current, { role: 'assistant', text: data.reply }]);
+
+      const completedMessages = [...nextMessages, { role: 'assistant', text: data.reply }];
+      setMessages(completedMessages);
+
+      if (isNewChat) {
+        try {
+          const { data: titleData } = await supabase.functions.invoke('vex-chat', {
+            body: { action: 'title', message: prompt },
+          });
+          if (typeof titleData?.title === 'string' && titleData.title.trim()) chatTitle = titleData.title.trim().slice(0, 64);
+        } catch (_) {
+          // Saving still works with a short fallback title if title generation is unavailable.
+        }
+      }
+      await saveChat(chatId, chatTitle, completedMessages);
     } catch (e) {
       let message = e?.message || 'Could not reach VEX. Check the Edge Function setup and try again.';
-      // A fetch error means the browser received no readable response at all.
-      // This commonly indicates a missing/stale Edge Function deployment or CORS failure.
       if (/failed to send a request to the edge function|failed to fetch|networkerror|network request failed/i.test(message)) {
         message = 'VEX could not connect to its server. The vex-chat Edge Function may need to be redeployed in Supabase. If it still fails after redeploying, check the current function logs.';
       }
-      // Supabase wraps non-2xx Edge Function responses in FunctionsHttpError.
-      // Read the response body so the user sees the actual server-side reason.
       try {
         const response = e?.context;
         if (response && typeof response.clone === 'function') {
@@ -194,10 +266,10 @@ function ChatApp({ session }) {
           if (typeof body?.error === 'string' && body.error.trim()) message = body.error;
           else if (typeof body?.message === 'string' && body.message.trim()) message = body.message;
         }
-      } catch (_) {
-        // Keep the original error if the response has no JSON body.
-      }
+      } catch (_) {}
       setError(message);
+      // Keep the user's message in history even if the AI request failed.
+      await saveChat(chatId, chatTitle, nextMessages);
     } finally { setSending(false); inputRef.current?.focus(); }
   }
 
@@ -207,9 +279,15 @@ function ChatApp({ session }) {
   return <main className={`app-shell ${dark ? 'theme-dark' : 'theme-light'}`}>
     <aside className={`sidebar ${mobileSidebar ? 'sidebar-open' : ''}`}>
       <div className="sidebar-brand"><OrbitMark small /><span>FROST<span className="brand-ai">AI</span></span><button className="mobile-close" onClick={() => setMobileSidebar(false)}><X size={18}/></button></div>
-      <button className="new-chat" onClick={() => { setMessages([]); setError(''); setMobileSidebar(false); }}><Plus size={17}/> New conversation <span>⌘ K</span></button>
-      <div className="side-label">YOUR SPACE</div>
-      <button className="side-link selected" onClick={() => setMessages([])}><MessageCircle size={17}/> VEX Assistant</button>
+      <button className="new-chat" onClick={startNewChat}><Plus size={17}/> New chat</button>
+      <div className="side-label">YOUR CHATS</div>
+      <div className="chat-history-list">
+        {historyLoading && <div className="history-empty">Loading chats…</div>}
+        {!historyLoading && conversations.length === 0 && <div className="history-empty">Your saved chats will appear here.</div>}
+        {conversations.map(chat => <button className={currentChatId === chat.id ? 'chat-history-item active' : 'chat-history-item'} key={chat.id} onClick={() => openChat(chat)} title={chat.title}><MessageCircle size={15}/><span>{chat.title || 'New chat'}</span></button>)}
+      </div>
+      <div className="side-label tools-label">YOUR SPACE</div>
+      <button className="side-link selected" onClick={startNewChat}><MessageCircle size={17}/> VEX Assistant</button>
       <div className="side-label tools-label">EXPLORE</div>
       <button className="side-link" onClick={() => sendMessage('Help me write and debug some code.')}><Code2 size={17}/> Coding</button>
       <button className="side-link" onClick={() => sendMessage('Help me study a topic step by step.')}><GraduationCap size={17}/> Learning</button>
