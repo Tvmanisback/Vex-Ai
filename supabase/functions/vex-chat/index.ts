@@ -100,6 +100,7 @@ Deno.serve(async (req) => {
 
         const status = response.status;
         lastError = result?.error?.message ?? `HTTP ${status}`;
+        console.error("Gemini chat request failed:", model, status, lastError);
         if (/high demand|overload|resource exhausted|temporarily unavailable/i.test(lastError) || status === 429 || status === 503) {
           sawHighDemand = true;
         }
@@ -115,7 +116,7 @@ Deno.serve(async (req) => {
         lastError = error instanceof Error
           ? (error.name === "AbortError" ? "Gemini request timed out after 8 seconds." : error.message)
           : String(error);
-        sawHighDemand = true;
+        console.error("Gemini chat request threw an error:", model, lastError);
         response = null;
         result = null;
         // The next loop iteration is the single fallback attempt.
@@ -126,9 +127,9 @@ Deno.serve(async (req) => {
 
     if (!response?.ok) {
       if (sawHighDemand) {
-        return json({ reply: "Vex Ai is on high demand :(, please try again later." });
+        return json({ error: "Gemini is rate-limited or overloaded right now. Check the Gemini API quota and billing, then try again." }, 503);
       }
-      return json({ error: "VEX is temporarily busy. Please try again in a moment." }, 502);
+      return json({ error: `Gemini request failed. Check Supabase Edge Function logs for the provider error. (${lastError.slice(0, 180)})` }, 502);
     }
     const text = result?.candidates?.[0]?.content?.parts
       ?.map((part: any) => part.text ?? "").join("").trim();
