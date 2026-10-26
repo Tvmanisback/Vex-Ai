@@ -185,3 +185,19 @@
 .theme-light .ui-mode-pc .sidebar { scrollbar-color: #c2cee0 transparent; }
 .theme-light .chat-history-list::-webkit-scrollbar-thumb,
 .theme-light .ui-mode-pc .sidebar::-webkit-scrollbar-thumb { background: #c2cee0; }
+
+
+/* iPad-specific layout: tablet spacing, wider content and a compact half-width chat drawer. */
+.ui-mode-ipad .chat-area { min-width: 0; }
+.ui-mode-ipad .app-header { padding-left: clamp(18px, 3vw, 36px); padding-right: clamp(18px, 3vw, 36px); }
+.ui-mode-ipad .conversation { width: min(100%, 1040px); padding-left: clamp(20px, 4vw, 52px); padding-right: clamp(20px, 4vw, 52px); }
+.ui-mode-ipad .welcome { max-width: 900px; }
+.ui-mode-ipad .suggestion-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ui-mode-ipad .composer-wrap { width: min(calc(100% - 48px), 920px); }
+.ui-mode-ipad .sidebar { overscroll-behavior: contain; }
+.ui-mode-ipad .chat-history-list { max-height: 38vh; overflow-y: auto; overscroll-behavior: contain; }
+.ui-mode-ipad .sidebar-scrim { position: fixed; inset: 0; z-index: 1001; background: rgba(3, 7, 18, .5); backdrop-filter: blur(3px); }
+@media (max-width: 760px) {
+  .ui-mode-ipad .suggestion-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ui-mode-ipad .composer-wrap { width: calc(100% - 24px); }
+}
