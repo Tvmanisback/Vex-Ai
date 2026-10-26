@@ -53,33 +53,55 @@ Deno.serve(async (req) => {
       // Prefer a configured search provider when available; DuckDuckGo is the no-key fallback.
       const tavilyKey = Deno.env.get("TAVILY_API_KEY");
       if (tavilyKey) {
-        try {
-          const searchRes = await fetch("https://api.tavily.com/search", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": "Bearer " + tavilyKey,
-            },
-            body: JSON.stringify({
-              query: query.slice(0, 390),
-              topic: /news|headlines|today|this week|latest/i.test(query) ? "news" : "general",
-              search_depth: "basic",
-              max_results: 6,
-              include_answer: false,
-            }),
-            signal: AbortSignal.timeout(12000),
-          });
-          if (searchRes.ok) {
-            const data = await searchRes.json();
-            for (const item of (data.results || []).slice(0, 6)) {
-              webNotes.push("Search result: " + String(item.title || "") + "\nURL: " + String(item.url || "") + "\nPublished: " + String(item.published_date || "not provided") + "\nSnippet: " + String(item.content || "").slice(0, 1200));
+        // Try several focused searches instead of sending a long natural-language request as one query.
+        const domainMatch = query.match(/(?:^|\\s)([a-z0-9-]+\\.[a-z]{2,}(?:\\.[a-z]{2,})?)/i);
+        const domain = domainMatch?.[1] || "";
+        const tavilyQueries = [...new Set([
+          query.slice(0, 240),
+          ...(domain ? [
+            domain,
+            `"${domain}" developer OR forum OR discussion`,
+            `site:reddit.com "${domain}"`,
+            `site:github.com "${domain}"`,
+          ] : []),
+        ])].slice(0, 5);
+        for (const tavilyQuery of tavilyQueries) {
+          try {
+            const searchRes = await fetch("https://api.tavily.com/search", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + tavilyKey,
+              },
+              body: JSON.stringify({
+                query: tavilyQuery.slice(0, 390),
+                topic: /news|headlines|today|this week|latest/i.test(tavilyQuery) ? "news" : "general",
+                search_depth: "advanced",
+                max_results: 6,
+                include_answer: false,
+              }),
+              signal: AbortSignal.timeout(12000),
+            });
+            if (searchRes.ok) {
+              const data = await searchRes.json();
+              const results = Array.isArray(data.results) ? data.results : [];
+              for (const item of results) {
+                const resultUrl = String(item.url || "");
+                if (!resultUrl) continue;
+                const alreadyAdded = webNotes.some(note => note.includes("\\nURL: " + resultUrl + "\\n"));
+                if (alreadyAdded) continue;
+                webNotes.push("Search result: " + String(item.title || "") + "\\nURL: " + resultUrl + "\\nPublished: " + String(item.published_date || "not provided") + "\\nSnippet: " + String(item.content || "").slice(0, 1200));
+              }
+              if (webNotes.length >= 6) break;
+            } else {
+              const errorText = (await searchRes.text().catch(() => "")).slice(0, 300);
+              console.error("Tavily search failed:", searchRes.status, errorText);
             }
-            retrieved = webNotes.length > 0;
-          } else {
-            const errorText = (await searchRes.text().catch(() => "")).slice(0, 500);
-            console.error("Tavily search failed:", searchRes.status, errorText);
+          } catch (e) {
+            console.error("Tavily search error:", e instanceof Error ? e.message : String(e));
           }
-        } catch (e) { console.error("Tavily search error:", e instanceof Error ? e.message : String(e)); }
+        }
+        retrieved = webNotes.length > 0;
       }
       if (!retrieved) {
         for (const endpoint of [
