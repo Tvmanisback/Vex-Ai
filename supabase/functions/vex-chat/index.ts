@@ -43,23 +43,69 @@ Deno.serve(async (req) => {
       { role: "user", parts: [{ text: message }] },
     ];
 
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + encodeURIComponent(apiKey),
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: "You are VEX AI by FROSTAI: helpful, clear, warm, and capable with coding, learning, productivity, creative work, and supportive mental wellness conversations. Do not claim to be a licensed therapist or replace professional care. Explain homework so the user can learn. Be honest about uncertainty." }] },
-          contents,
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1800 },
-        }),
-      },
-    );
+    const systemInstruction = { parts: [{ text: "You are VEX AI by FROSTAI: helpful, clear, warm, and capable with coding, learning, productivity, creative work, and supportive mental wellness conversations. Do not claim to be a licensed therapist or replace professional care. Explain homework so the user can learn. Be honest about uncertainty." }] };
+    const models = ["gemini-3.8-flash", "gemini-3.6-flash"];
+    let result: any = null;
+    let response: Response | null = null;
+    let lastError = "Unknown Gemini error";
 
-    const result = await response.json();
-    if (!response.ok) {
-      console.error("Gemini request failed:", result?.error?.message ?? response.status);
-      return json({ error: "VEX couldn't get a response right now. Check your Gemini API quota and configuration." }, 502);
+    // Retry transient overload/rate-limit errors with exponential backoff,
+    // then try a secondary stable model if the primary remains unavailable.
+    for (const model of models) {
+      let shouldTryFallback = false;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=` + encodeURIComponent(apiKey),
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                systemInstruction,
+                contents,
+                generationConfig: { temperature: 0.7, maxOutputTokens: 1800 },
+              }),
+            },
+          );
+
+          result = await response.json().catch(() => ({}));
+          if (response.ok) break;
+
+          const status = response.status;
+          lastError = result?.error?.message ?? `HTTP ${status}`;
+          const transient = status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+          if (!transient) {
+            // Try the fallback model for model availability/capacity errors,
+            // but don't retry permanent authentication or malformed requests.
+            shouldTryFallback = status === 404 || status === 503 || /high demand|overload|unavailable|not available/i.test(lastError);
+            break;
+          }
+          if (attempt < 2) {
+            const delayMs = 1000 * (2 ** attempt) + Math.floor(Math.random() * 300);
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+          } else {
+            shouldTryFallback = true;
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : String(error);
+          if (attempt < 2) {
+            const delayMs = 1000 * (2 ** attempt) + Math.floor(Math.random() * 300);
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+          } else {
+            shouldTryFallback = true;
+          }
+        }
+      }
+
+      if (response?.ok) break;
+      console.error(`Gemini model ${model} failed:`, lastError);
+      if (!shouldTryFallback) break;
+      response = null;
+      result = null;
+    }
+
+    if (!response?.ok) {
+      return json({ error: "VEX is temporarily busy. Please try again in a moment." }, 502);
     }
     const text = result?.candidates?.[0]?.content?.parts
       ?.map((part: any) => part.text ?? "").join("").trim();
