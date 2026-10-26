@@ -214,3 +214,6 @@
 .attached-message-files{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .attached-message-files span{background:#15233a}
 @media(max-width:520px){.composer-tools>span{max-width:60%;font-size:10px}.attach-button{padding:8px}.attach-button span{display:none}}
+
+.attachment-thumb{width:28px;height:28px;object-fit:cover;border-radius:5px;flex-shrink:0}
+.attachment-chip>span{overflow-wrap:anywhere}
