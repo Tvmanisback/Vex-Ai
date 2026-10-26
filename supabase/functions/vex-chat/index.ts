@@ -229,6 +229,76 @@ GENERAL RESPONSE STYLE:
       return json({ title: message.split(/\s+/).slice(0, 6).join(" ").slice(0, 64) || "New chat" });
     }
 
+    // FreeTheAI media API: models are discovered dynamically so we never guess IDs.
+    if (body.action === "media-models") {
+      const mediaKey = Deno.env.get("FREETHEAI_API_KEY");
+      if (!mediaKey) return json({ error: "FreeTheAI is not configured. Add FREETHEAI_API_KEY to Supabase Edge Function secrets." }, 503);
+      const modelRes = await fetch("https://api.freetheai.org/v1/models", {
+        headers: { Authorization: "Bearer " + mediaKey },
+        signal: AbortSignal.timeout(15000),
+      });
+      const modelData = await modelRes.json().catch(() => ({}));
+      if (!modelRes.ok) {
+        console.error("FreeTheAI model listing failed:", modelRes.status, JSON.stringify(modelData).slice(0, 500));
+        return json({ error: "FreeTheAI could not list models (HTTP " + modelRes.status + "). Verify your key, email, and daily check-in." }, 502);
+      }
+      const models = Array.isArray(modelData.data) ? modelData.data : [];
+      return json({ models: models.filter((m: any) => /image|video|media/i.test(JSON.stringify(m))) });
+    }
+
+    if (body.action === "media-create") {
+      const mediaKey = Deno.env.get("FREETHEAI_API_KEY");
+      if (!mediaKey) return json({ error: "FreeTheAI is not configured. Add FREETHEAI_API_KEY to Supabase Edge Function secrets." }, 503);
+      const kind = body.kind === "video" ? "video" : "image";
+      const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+      const model = typeof body.model === "string" ? body.model.trim() : "";
+      if (!prompt || prompt.length > 7000) return json({ error: "Enter a prompt up to 7,000 characters." }, 400);
+      if (!model) return json({ error: "Choose a model from the model list first." }, 400);
+      const payload: Record<string, unknown> = { model, prompt };
+      if (kind === "image") {
+        payload.n = 1;
+        payload.response_format = "b64_json";
+        if (typeof body.size === "string" && /^\d{3,4}x\d{3,4}$/.test(body.size)) payload.size = body.size;
+      } else {
+        payload.seconds = String(Math.min(10, Math.max(3, Number(body.seconds) || 5)));
+        if (typeof body.size === "string" && /^\d{3,4}x\d{3,4}$/.test(body.size)) payload.size = body.size;
+        if (typeof body.input_reference === "string" && /^data:image\/(png|jpeg|webp);base64,/i.test(body.input_reference)) payload.input_reference = body.input_reference;
+      }
+      const endpoint = kind === "video" ? "https://api.freetheai.org/v1/videos" : "https://api.freetheai.org/v1/images/generations";
+      const mediaRes = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + mediaKey },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(25000),
+      });
+      const task = await mediaRes.json().catch(() => ({}));
+      if (!mediaRes.ok) {
+        console.error("FreeTheAI media creation failed:", mediaRes.status, JSON.stringify(task).slice(0, 600));
+        const message = task?.error?.message || task?.message || "HTTP " + mediaRes.status;
+        return json({ error: "FreeTheAI generation failed: " + String(message).slice(0, 220) }, 502);
+      }
+      return json({ task });
+    }
+
+    if (body.action === "media-status") {
+      const mediaKey = Deno.env.get("FREETHEAI_API_KEY");
+      if (!mediaKey) return json({ error: "FreeTheAI is not configured. Add FREETHEAI_API_KEY to Supabase Edge Function secrets." }, 503);
+      const taskId = typeof body.taskId === "string" ? body.taskId.trim() : "";
+      const kind = body.kind === "video" ? "video" : "image";
+      if (!/^task_[A-Za-z0-9_-]+$/.test(taskId)) return json({ error: "Invalid generation task ID." }, 400);
+      const endpoint = kind === "video" ? "videos" : "images/generations";
+      const taskRes = await fetch("https://api.freetheai.org/v1/" + endpoint + "/" + encodeURIComponent(taskId), {
+        headers: { Authorization: "Bearer " + mediaKey },
+        signal: AbortSignal.timeout(15000),
+      });
+      const task = await taskRes.json().catch(() => ({}));
+      if (!taskRes.ok) {
+        console.error("FreeTheAI task polling failed:", taskRes.status, JSON.stringify(task).slice(0, 500));
+        return json({ error: "Could not check generation status (HTTP " + taskRes.status + ")." }, 502);
+      }
+      return json({ task });
+    }
+
     const messages = [
       { role: "system", content: systemPrompt },
       ...history.filter((item: any) =>
