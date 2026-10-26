@@ -179,7 +179,20 @@ function ChatApp({ session }) {
       if (data?.error) throw new Error(data.error);
       setMessages(current => [...current, { role: 'assistant', text: data.reply }]);
     } catch (e) {
-      setError(e?.message || 'Could not reach VEX. Check the Edge Function setup and try again.');
+      let message = e?.message || 'Could not reach VEX. Check the Edge Function setup and try again.';
+      // Supabase wraps non-2xx Edge Function responses in FunctionsHttpError.
+      // Read the response body so the user sees the actual server-side reason.
+      try {
+        const response = e?.context;
+        if (response && typeof response.clone === 'function') {
+          const body = await response.clone().json();
+          if (typeof body?.error === 'string' && body.error.trim()) message = body.error;
+          else if (typeof body?.message === 'string' && body.message.trim()) message = body.message;
+        }
+      } catch (_) {
+        // Keep the original error if the response has no JSON body.
+      }
+      setError(message);
     } finally { setSending(false); inputRef.current?.focus(); }
   }
 
