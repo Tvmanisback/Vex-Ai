@@ -127,3 +127,21 @@
 @media(prefers-reduced-motion:reduce){
   .ui-mode-mobile .sidebar{transition:none}
 }
+
+
+/* Mobile chat-history launcher and near-full-screen chat drawer */
+.mobile-chats-button{display:none;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:0 11px;border:1px solid #293a54;border-radius:9px;background:#101a2b;color:#dceaff;font-size:11px;font-weight:700}
+.mobile-chats-button svg{color:#9fd5ff}
+@media(max-width:760px){
+  .mobile-chats-button{display:inline-flex}
+  .ui-mode-mobile .sidebar,
+  .sidebar{width:min(88vw,420px);max-width:420px;padding:20px 15px max(18px,env(safe-area-inset-bottom));}
+  .ui-mode-mobile .sidebar.sidebar-open,
+  .sidebar.sidebar-open{transform:translateX(0)}
+  .sidebar .chat-history-list{overflow-y:auto;overscroll-behavior:contain;max-height:38vh}
+  .sidebar-scrim{display:block;position:fixed;inset:0;z-index:4;border:0;background:rgba(1,4,11,.72);backdrop-filter:blur(3px)}
+  .mobile-close{display:grid}
+}
+@media(min-width:761px){
+  .mobile-chats-button{display:none}
+}
