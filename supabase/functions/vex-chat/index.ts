@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
           console.error("Chat title generation failed:", titleError instanceof Error ? titleError.message : String(titleError));
         }
       }
-      return json({ title: message.split(/\\s+/).slice(0, 6).join(" ").slice(0, 64) || "New chat" });
+      return json({ title: message.split(/\s+/).slice(0, 6).join(" ").slice(0, 64) || "New chat" });
     }
 
     const contents = [
