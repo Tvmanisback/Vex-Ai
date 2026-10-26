@@ -84,7 +84,7 @@ function AuthScreen() {
   return <main className="auth-layout">
     <section className="auth-art">
       <div className="art-grid" />
-      <div className="auth-topbrand"><OrbitMark /><span>FROST<span className="brand-ai">AI</span></span></div>
+      <div className="auth-topbrand"><OrbitMark /><span>VEX AI</span></div>
       <div className="art-center">
         <div className="hero-orbit"><OrbitMark /></div>
         <p className="eyebrow"><span className="live-dot" /> YOUR SPACE TO THINK BIGGER</p>
@@ -94,7 +94,7 @@ function AuthScreen() {
       <div className="art-footer"><span>VEX AI</span><span>ONE INTELLIGENCE. ENDLESS POSSIBILITIES.</span></div>
     </section>
     <section className="auth-panel">
-      <div className="mobile-brand"><OrbitMark small /><b>FROST<span className="brand-ai">AI</span></b></div>
+      <div className="mobile-brand"><OrbitMark small /><b>VEX AI</b></div>
       <div className="auth-card">
         <div className="auth-heading">
           <div className="mini-mark"><OrbitMark small /></div>
@@ -121,7 +121,7 @@ function AuthScreen() {
         <p className="auth-switch">{mode === 'login' ? "New around here? " : 'Already have an account? '}<button onClick={() => changeMode(mode === 'login' ? 'register' : 'login')} type="button">{mode === 'login' ? 'Create an account' : 'Log in'}</button></p>
         <p className="legal"><ShieldCheck size={14} /> Your account is secured by Supabase authentication.</p>
       </div>
-      <div className="auth-bottom"><span>© 2026 FROSTAI</span><span>BUILT FOR WHAT'S NEXT <Sparkles size={12} /></span></div>
+      <div className="auth-bottom"><span>© 2026 VEX AI</span><span>BUILT FOR WHAT'S NEXT <Sparkles size={12} /></span></div>
     </section>
   </main>;
 }
