@@ -228,7 +228,7 @@ function ChatApp({ session }) {
     const chatId = currentChatId || crypto.randomUUID();
     const previousMessages = messages;
     const nextMessages = [...previousMessages, { role: 'user', text: prompt }];
-    const fallbackTitle = prompt.split(/\\s+/).slice(0, 6).join(' ').slice(0, 64) || 'New chat';
+    const fallbackTitle = prompt.split(/\s+/).slice(0, 6).join(' ').slice(0, 64) || 'New chat';
     setCurrentChatId(chatId);
     setMessages(nextMessages);
     setInput('');
