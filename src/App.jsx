@@ -168,8 +168,8 @@ function AuthScreen() {
         <button className="google-button" onClick={googleSignIn} type="button" disabled={busy}>
           <GoogleIcon /> Continue with Google
         </button>
-        <button className="google-button yapin-button" onClick={yapinSignIn} type="button" disabled={busy}>
-          <span className="yapin-mark" aria-hidden="true">Y</span> Login with Yapin’
+        <button className="google-button yapin-button" onClick={yapinSignIn} type="button" disabled={busy} style={{ background: "#ff7a1a", borderColor: "#ff7a1a", color: "#ffffff" }}>
+          <img src="https://www.yapin.gg/favicon.ico" alt="" width="19" height="19" style={{ width: 19, height: 19, objectFit: "contain", borderRadius: 4 }} onError={e => { e.currentTarget.style.display = "none"; }} /> Login with Yapin’
         </button>
         <div className="divider"><span /> <small>OR WITH EMAIL</small> <span /></div>
         <form onSubmit={submit} className="auth-form">
