@@ -48,6 +48,7 @@ Deno.serve(async (req) => {
     let result: any = null;
     let response: Response | null = null;
     let lastError = "Unknown Gemini error";
+    let sawHighDemand = false;
 
     // Retry transient overload/rate-limit errors with exponential backoff,
     // then try a secondary stable model if the primary remains unavailable.
@@ -73,6 +74,7 @@ Deno.serve(async (req) => {
 
           const status = response.status;
           lastError = result?.error?.message ?? `HTTP ${status}`;
+          if (/high demand|overload|resource exhausted|temporarily unavailable/i.test(lastError)) sawHighDemand = true;
           const transient = status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
           if (!transient) {
             // Try the fallback model for model availability/capacity errors,
@@ -105,6 +107,9 @@ Deno.serve(async (req) => {
     }
 
     if (!response?.ok) {
+      if (sawHighDemand) {
+        return json({ reply: "Vex Ai is on high demand :(, please try again later." });
+      }
       return json({ error: "VEX is temporarily busy. Please try again in a moment." }, 502);
     }
     const text = result?.candidates?.[0]?.content?.parts
