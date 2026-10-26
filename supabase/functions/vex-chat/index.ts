@@ -29,6 +29,36 @@ Deno.serve(async (req) => {
     const history = Array.isArray(body.history) ? body.history.slice(-12) : [];
     if (!message || message.length > 8000) return json({ error: "Enter a message under 8,000 characters." }, 400);
 
+    // Generate a short, useful chat title from the user's opening message.
+    if (body.action === "title") {
+      const titlePrompt = "Create a concise title for this chat based on the user's message. Use 3–6 words, no quotation marks, no ending punctuation, and return only the title. User message: " + message;
+      for (const model of ["gemini-3.8-flash", "gemini-3.6-flash"]) {
+        try {
+          const titleResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=` + encodeURIComponent(apiKey),
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              signal: AbortSignal.timeout(8000),
+              body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: titlePrompt }] }],
+                generationConfig: { temperature: 0.2, maxOutputTokens: 24 },
+              }),
+            },
+          );
+          const titleResult = await titleResponse.json().catch(() => ({}));
+          if (titleResponse.ok) {
+            const title = titleResult?.candidates?.[0]?.content?.parts?.map((part: any) => part.text ?? "").join("").trim()
+              .replace(/^["'“”]+|["'“”]+$/g, "").replace(/[.!?]+$/g, "").slice(0, 64);
+            if (title) return json({ title });
+          }
+        } catch (titleError) {
+          console.error("Chat title generation failed:", titleError instanceof Error ? titleError.message : String(titleError));
+        }
+      }
+      return json({ title: message.split(/\\s+/).slice(0, 6).join(" ").slice(0, 64) || "New chat" });
+    }
+
     const contents = [
       ...history.filter((item: any) =>
         item && ["user", "model"].includes(item.role) &&
