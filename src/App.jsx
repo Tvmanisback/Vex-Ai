@@ -180,6 +180,11 @@ function ChatApp({ session }) {
       setMessages(current => [...current, { role: 'assistant', text: data.reply }]);
     } catch (e) {
       let message = e?.message || 'Could not reach VEX. Check the Edge Function setup and try again.';
+      // A fetch error means the browser received no readable response at all.
+      // This commonly indicates a missing/stale Edge Function deployment or CORS failure.
+      if (/failed to send a request to the edge function|failed to fetch|networkerror|network request failed/i.test(message)) {
+        message = 'VEX could not connect to its server. The vex-chat Edge Function may need to be redeployed in Supabase. If it still fails after redeploying, check the current function logs.';
+      }
       // Supabase wraps non-2xx Edge Function responses in FunctionsHttpError.
       // Read the response body so the user sees the actual server-side reason.
       try {
