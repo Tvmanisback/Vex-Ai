@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowUp, Atom, Check, ChevronDown, Code2, Compass, Eye, EyeOff, Paperclip,
   GraduationCap, LogOut, Menu, MessageCircle, Moon, Plus, Settings2,
-  ShieldCheck, Sparkles, Sun, Video, BriefcaseBusiness, X, Smartphone, Monitor, Tablet
+  ShieldCheck, Sparkles, Sun, BriefcaseBusiness, X, Smartphone, Monitor, Tablet
 } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import ReactMarkdown from 'react-markdown';
@@ -315,15 +315,6 @@ function ChatApp({ session }) {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [input, setInput] = useState('');
-  const [studioOpen, setStudioOpen] = useState(false);
-  const [studioKind, setStudioKind] = useState('image');
-  const [studioPrompt, setStudioPrompt] = useState('');
-  const [studioModels, setStudioModels] = useState([]);
-  const [studioModel, setStudioModel] = useState('');
-  const [studioLoading, setStudioLoading] = useState(false);
-  const [studioStatus, setStudioStatus] = useState('');
-  const [studioResult, setStudioResult] = useState(null);
-
   const [attachments, setAttachments] = useState([]);
   const [readingFiles, setReadingFiles] = useState(false);
   const fileInputRef = useRef(null);
@@ -455,66 +446,6 @@ function ChatApp({ session }) {
     finally { setReadingFiles(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
   }
 
-  async function openCreativeStudio() {
-    setStudioOpen(true);
-    setMobileSidebar(false);
-    setError('');
-    if (studioModels.length) return;
-    setStudioLoading(true);
-    setStudioStatus('Loading available FreeTheAI models…');
-    try {
-      const { data, error: invokeError } = await supabase.functions.invoke('vex-chat', { body: { action: 'media-models' } });
-      if (invokeError) throw invokeError;
-      if (data?.error) throw new Error(data.error);
-      const models = Array.isArray(data?.models) ? data.models : [];
-      setStudioModels(models);
-      if (!models.length) setStudioStatus('No media models were returned for this API key. Check your FreeTheAI model access.');
-      else setStudioStatus('Choose a model and enter a prompt.');
-    } catch (e) {
-      setStudioStatus(e?.message || 'Could not load FreeTheAI models. Check the API key and Supabase deployment.');
-    } finally { setStudioLoading(false); }
-  }
-
-  async function generateMedia() {
-    if (!studioPrompt.trim() || !studioModel) {
-      setStudioStatus('Enter a prompt and select a model first.');
-      return;
-    }
-    setStudioLoading(true);
-    setStudioResult(null);
-    setStudioStatus('Starting generation…');
-    try {
-      const { data, error: invokeError } = await supabase.functions.invoke('vex-chat', {
-        body: { action: 'media-create', kind: studioKind, prompt: studioPrompt.trim(), model: studioModel, seconds: 5, size: '1024x1024' }
-      });
-      if (invokeError) throw invokeError;
-      if (data?.error) throw new Error(data.error);
-      let task = data?.task;
-      if (!task?.id) throw new Error('FreeTheAI did not return a task ID.');
-      setStudioStatus('Generation queued…');
-      for (let i = 0; i < 90; i++) {
-        if (task.status === 'completed') break;
-        if (task.status === 'failed') throw new Error(task.error?.message || 'Generation failed. Try another model or prompt.');
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        const { data: statusData, error: statusError } = await supabase.functions.invoke('vex-chat', {
-          body: { action: 'media-status', kind: studioKind, taskId: task.id }
-        });
-        if (statusError) throw statusError;
-        if (statusData?.error) throw new Error(statusData.error);
-        task = statusData?.task || task;
-        setStudioStatus((task.status || 'Generating…').replace('_', ' ') + (typeof task.progress === 'number' ? ' · ' + task.progress + '%' : '') + ' — please keep this page open.');
-      }
-      if (task.status !== 'completed') throw new Error('This generation is taking longer than expected. Try again later; the task may still be processing.');
-      let resultUrl = task.content_url || task.url || task.data?.[0]?.url || '';
-      let imageSrc = task.data?.[0]?.b64_json ? 'data:image/png;base64,' + task.data[0].b64_json : '';
-      if (!resultUrl && !imageSrc) throw new Error('Generation finished but the API returned no downloadable result.');
-      setStudioResult({ kind: studioKind, url: resultUrl, imageSrc, taskId: task.id });
-      setStudioStatus('Generation complete!');
-    } catch (e) {
-      setStudioStatus(e?.message || 'Generation failed.');
-    } finally { setStudioLoading(false); }
-  }
-
   async function sendMessage(text = input) {
     const userText = text.trim();
     if ((!userText && !attachments.length) || sending || readingFiles) return;
@@ -592,7 +523,6 @@ function ChatApp({ session }) {
       <button className="side-link" onClick={() => sendMessage('Help me write and debug some code.')}><Code2 size={17}/> Coding</button>
       <button className="side-link" onClick={() => sendMessage('Help me study a topic step by step.')}><GraduationCap size={17}/> Learning</button>
       <button className="side-link" onClick={() => sendMessage('Help me organize my work tasks and priorities.')}><BriefcaseBusiness size={17}/> Work & tasks</button>
-      <button className={studioOpen ? "side-link selected" : "side-link"} onClick={openCreativeStudio}><Video size={17}/> Creative studio</button>
       <div className="sidebar-bottom">
         <div className="plan-card"><div className="plan-icon"><Sparkles size={16}/></div><div><b>Your ideas, amplified.</b><p>Make room for what's next.</p></div></div>
         <button className="profile-button" onClick={() => setMenuOpen(v => !v)}><span className="avatar">{username.slice(0,1).toUpperCase()}</span><span className="profile-info"><b>{username}</b><small>{session.user.email}</small></span><ChevronDown size={16}/></button>
@@ -602,28 +532,6 @@ function ChatApp({ session }) {
     {mobileSidebar && <button className="sidebar-scrim" onClick={() => setMobileSidebar(false)} aria-label="Close navigation" />}
     <section className="chat-area">
       <header className="app-header"><div className="header-left"><button className="menu-button" onClick={() => setMobileSidebar(true)} aria-label="Open chat navigation"><Menu size={20}/></button><button className="mobile-chats-button" onClick={() => setMobileSidebar(true)} style={uiMode === 'mobile' || uiMode === 'ipad' ? { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 12, fontWeight: 700, flexShrink: 0 } : undefined}><MessageCircle size={16}/><span>Chats</span></button><div className="vex-mini"><OrbitMark small/><span>VEX <b>AI</b></span></div><span className="header-divider"/><span className="model-label"><span className="live-dot"/> VEX assistant</span></div><div className="header-right"><span className="secure-label"><ShieldCheck size={14}/> Private space</span><div className="ui-mode-switch" role="group" aria-label="Interface layout"><button type="button" className={uiMode === 'mobile' ? 'active' : ''} onClick={() => setUiMode('mobile')} title="Mobile layout" aria-label="Use mobile layout"><Smartphone size={15}/><span>Mobile</span></button><button type="button" className={uiMode === 'ipad' ? 'active' : ''} onClick={() => setUiMode('ipad')} title="iPad layout" aria-label="Use iPad layout"><Tablet size={15}/><span>iPad</span></button><button type="button" className={uiMode === 'pc' ? 'active' : ''} onClick={() => setUiMode('pc')} title="Desktop layout" aria-label="Use desktop layout"><Monitor size={15}/><span>PC</span></button></div><button className="header-icon" onClick={() => setDark(v => !v)} title="Toggle appearance">{dark ? <Sun size={17}/> : <Moon size={17}/>}</button></div></header>
-      {studioOpen && <section style={{ margin: '18px auto', width: 'min(920px, calc(100% - 32px))', padding: 22, borderRadius: 20, border: '1px solid var(--border, #30384a)', background: 'var(--panel, #111827)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div><p className="eyebrow">VEX CREATIVE STUDIO</p><h2 style={{ margin: '4px 0 8px' }}>Create something new</h2><p className="muted">FreeTheAI image and video generation</p></div>
-          <button className="attach-button" type="button" onClick={() => setStudioOpen(false)}>Close studio</button>
-        </div>
-        <div style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
-          <button type="button" className={studioKind === 'image' ? 'primary-button' : 'attach-button'} onClick={() => { setStudioKind('image'); setStudioModel(''); setStudioResult(null); }}>Image</button>
-          <button type="button" className={studioKind === 'video' ? 'primary-button' : 'attach-button'} onClick={() => { setStudioKind('video'); setStudioModel(''); setStudioResult(null); }}>Video</button>
-        </div>
-        <label style={{ display: 'block', marginBottom: 8 }}>Available {studioKind} model
-          <select value={studioModel} onChange={e => setStudioModel(e.target.value)} style={{ display: 'block', width: '100%', marginTop: 7, padding: 12, borderRadius: 10, background: 'var(--input, #0b1220)', color: 'inherit', border: '1px solid var(--border, #30384a)' }}>
-            <option value="">Select a model…</option>
-            {studioModels.filter(m => { const text = JSON.stringify(m).toLowerCase(); return text.includes(studioKind) || text.includes(studioKind === 'image' ? 'flux' : 'veo') || text.includes(studioKind === 'image' ? 'diffusion' : 'wan'); }).map((m, i) => <option key={m.id || m.name || i} value={m.id || m.name}>{m.id || m.name}{m.name && m.id && m.name !== m.id ? ' — ' + m.name : ''}</option>)}
-          </select>
-        </label>
-        <textarea value={studioPrompt} onChange={e => setStudioPrompt(e.target.value)} maxLength={7000} rows={4} placeholder={studioKind === 'image' ? 'Describe the image you want VEX to create…' : 'Describe the video, its motion, scene, and camera…'} style={{ display: 'block', width: '100%', boxSizing: 'border-box', margin: '12px 0', padding: 14, borderRadius: 12, resize: 'vertical', background: 'var(--input, #0b1220)', color: 'inherit', border: '1px solid var(--border, #30384a)' }} />
-        <button type="button" className="primary-button" disabled={studioLoading || !studioPrompt.trim() || !studioModel} onClick={generateMedia}>{studioLoading ? 'Generating…' : 'Generate ' + (studioKind === 'image' ? 'image' : 'video')}</button>
-        {studioStatus && <p role="status" style={{ marginTop: 12 }}>{studioStatus}</p>}
-        {studioResult?.imageSrc && <div style={{ marginTop: 16 }}><img src={studioResult.imageSrc} alt="AI-generated result" style={{ display: 'block', width: '100%', maxWidth: 700, borderRadius: 14 }} /><a href={studioResult.imageSrc} download="vex-generated-image.png">Download image</a></div>}
-        {studioResult?.url && studioResult.kind === 'video' && <div style={{ marginTop: 16 }}><video controls playsInline src={studioResult.url} style={{ width: '100%', maxWidth: 700, borderRadius: 14 }} /><p><a href={studioResult.url} target="_blank" rel="noreferrer" download>Open / download video</a></p></div>}
-        {studioResult?.url && studioResult.kind === 'image' && !studioResult.imageSrc && <div style={{ marginTop: 16 }}><img src={studioResult.url} alt="AI-generated result" style={{ width: '100%', maxWidth: 700, borderRadius: 14 }} /><p><a href={studioResult.url} target="_blank" rel="noreferrer" download>Open / download image</a></p></div>}
-      </section>}
       <div className={`conversation ${messages.length ? 'has-messages' : ''}`}>
         {messages.length === 0 ? <div className="welcome">
           <div className="welcome-emblem"><OrbitMark/></div>
