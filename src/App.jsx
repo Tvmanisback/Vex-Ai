@@ -398,7 +398,27 @@ export default function App() {
   useEffect(() => {
     if (!isSupabaseConfigured) { setConfigError(true); setSession(null); return; }
     let alive = true;
-    supabase.auth.getSession().then(({ data }) => { if (alive) setSession(data.session); });
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = fragment.get('access_token');
+    const refreshToken = fragment.get('refresh_token');
+    const isYapinCallback = Boolean(accessToken && refreshToken);
+    if (isYapinCallback) {
+      // Remove OAuth tokens from the address bar immediately.
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ data, error }) => {
+          if (!alive) return;
+          if (error) {
+            console.error('Could not establish Yapin session:', error.message);
+            setSession(null);
+            window.location.replace(window.location.pathname + '?yapin_error=session_setup');
+            return;
+          }
+          setSession(data.session);
+        });
+    } else {
+      supabase.auth.getSession().then(({ data }) => { if (alive) setSession(data.session); });
+    }
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (alive) setSession(nextSession);
     });
