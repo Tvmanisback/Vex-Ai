@@ -7,7 +7,7 @@ import {
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Check, Copy } from 'lucide-react';
+import { Copy } from 'lucide-react';
 
 const suggestions = [
   { icon: Code2, title: 'Help me code', text: 'Debug code, explain concepts, and build projects.' },
