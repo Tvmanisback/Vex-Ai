@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ArrowUp, Atom, Check, ChevronDown, Code2, Compass, Eye, EyeOff,
+  ArrowUp, Atom, Check, ChevronDown, Code2, Compass, Eye, EyeOff, Paperclip,
   GraduationCap, LogOut, Menu, MessageCircle, Moon, Plus, Settings2,
   ShieldCheck, Sparkles, Sun, Video, BriefcaseBusiness, X, Smartphone, Monitor, Tablet
 } from 'lucide-react';
@@ -315,6 +315,9 @@ function ChatApp({ session }) {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState([]);
+  const [readingFiles, setReadingFiles] = useState(false);
+  const fileInputRef = useRef(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -388,14 +391,65 @@ function ChatApp({ session }) {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, sending]);
 
+  async function addFiles(fileList) {
+    const picked = Array.from(fileList || []);
+    if (!picked.length) return;
+    setReadingFiles(true);
+    setError('');
+    try {
+      const next = [];
+      let totalChars = attachments.reduce((n, a) => n + a.content.length, 0);
+      for (const file of picked) {
+        if (file.size > 10 * 1024 * 1024) throw new Error(file.name + ' is over the 10 MB per-file limit.');
+        const name = file.name;
+        const lower = name.toLowerCase();
+        if (/\.zip$/i.test(lower) || file.type === 'application/zip') {
+          const zip = await JSZip.loadAsync(file);
+          for (const [path, entry] of Object.entries(zip.files)) {
+            if (entry.dir || path.startsWith('__MACOSX/') || /(^|\/)\./.test(path)) continue;
+            if (!/\.(txt|md|json|js|jsx|ts|tsx|py|html|css|xml|csv|yml|yaml|toml|sql|sh|java|cs|cpp|c|h|go|rs|php|rb|swift|kt|dart|log|ini|env|svg)$/i.test(path)) continue;
+            const content = await entry.async('string');
+            totalChars += content.length;
+            if (totalChars > 120000) throw new Error('These files exceed the 120,000-character total limit. Upload fewer or smaller files.');
+            next.push({ name: path, content });
+          }
+        } else if (/\.pdf$/i.test(lower) || file.type === 'application/pdf') {
+          const pdfjs = await import('https://esm.sh/pdfjs-dist@4.10.38/build/pdf.mjs');
+          const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), useWorkerFetch: false, isEvalSupported: false, disableFontFace: true }).promise;
+          const pages = [];
+          for (let pageNo = 1; pageNo <= Math.min(pdf.numPages, 80); pageNo++) {
+            const page = await pdf.getPage(pageNo);
+            const data = await page.getTextContent();
+            pages.push('[Page ' + pageNo + '] ' + data.items.map(item => item.str || '').join(' '));
+          }
+          const content = pages.join('\n');
+          totalChars += content.length;
+          if (totalChars > 120000) throw new Error('These files exceed the 120,000-character total limit.');
+          next.push({ name, content });
+        } else if (/\.(txt|md|json|js|jsx|ts|tsx|py|html|css|xml|csv|yml|yaml|toml|sql|sh|java|cs|cpp|c|h|go|rs|php|rb|swift|kt|dart|log|ini|env|svg|config|gradle|properties)$/i.test(lower) || file.type.startsWith('text/')) {
+          const content = await file.text();
+          totalChars += content.length;
+          if (totalChars > 120000) throw new Error('These files exceed the 120,000-character total limit.');
+          next.push({ name, content });
+        } else throw new Error('Unsupported file type: ' + name + '. Upload code/text files, PDFs, or ZIP archives.');
+      }
+      setAttachments(previous => [...previous, ...next]);
+    } catch (e) { setError(e?.message || 'Could not read those files.'); }
+    finally { setReadingFiles(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
+  }
+
   async function sendMessage(text = input) {
-    const prompt = text.trim();
-    if (!prompt || sending) return;
+    const userText = text.trim();
+    if ((!userText && !attachments.length) || sending || readingFiles) return;
+    const fileContext = attachments.map(file => '\n\n--- ATTACHED FILE: ' + file.name + ' ---\n' + file.content + '\n--- END FILE ---').join('');
+    const prompt = (userText || 'Please inspect the attached file(s) and help me with them.') + (fileContext ? '\n\nThe user attached these files. Read their contents and use them as context; refer to files by filename.\n' + fileContext : '');
+    const attachedNames = attachments.map(file => file.name);
+    setAttachments([]);
     setError('');
     const isNewChat = !currentChatId;
     const chatId = currentChatId || crypto.randomUUID();
     const previousMessages = messages;
-    const nextMessages = [...previousMessages, { role: 'user', text: prompt }];
+    const nextMessages = [...previousMessages, { role: 'user', text: userText || 'Please inspect the attached file(s).', attachments: attachedNames }];
     const fallbackTitle = prompt.split(/\s+/).slice(0, 6).join(' ').slice(0, 64) || 'New chat';
     setCurrentChatId(chatId);
     setMessages(nextMessages);
@@ -477,7 +531,7 @@ function ChatApp({ session }) {
           <h1>Hey {username},<br/><span>what's on your mind?</span></h1>
           <p className="welcome-copy">I'm VEX. Let's untangle a problem, learn something new,<br className="desktop-break"/> or turn that idea into something real.</p>
           <div className="suggestion-grid">{suggestions.map(({icon: Icon, title, text}) => <button className="suggestion-card" key={title} onClick={() => { setInput(title === 'Help me code' ? 'Help me with a coding project.' : title === 'Learn something' ? 'Teach me something interesting, step by step.' : title === 'Get work done' ? 'Help me plan my tasks for today.' : 'Help me brainstorm a creative idea.'); inputRef.current?.focus(); }}><span className="suggestion-icon"><Icon size={18}/></span><b>{title}</b><small>{text}</small></button>)}</div>
-        </div> : <div className="message-list">{messages.map((m,i) => <div className={`message-row ${m.role}`} key={i}><div className="message-avatar">{m.role === 'assistant' ? <OrbitMark small/> : username.slice(0,1).toUpperCase()}</div><div className="message-body"><div className="message-name">{m.role === 'assistant' ? 'VEX AI' : username}</div><div className={"message-text markdown-content " + (m.role === 'user' ? 'user-markdown' : '')}>{m.role === 'assistant' && <ProjectZipButton text={m.text} />}<ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+        </div> : <div className="message-list">{messages.map((m,i) => <div className={`message-row ${m.role}`} key={i}><div className="message-avatar">{m.role === 'assistant' ? <OrbitMark small/> : username.slice(0,1).toUpperCase()}</div><div className="message-body"><div className="message-name">{m.role === 'assistant' ? 'VEX AI' : username}</div><div className={"message-text markdown-content " + (m.role === 'user' ? 'user-markdown' : '')}>{m.attachments?.length > 0 && <div className="attached-message-files">{m.attachments.map(name => <span key={name}><Paperclip size={12}/>{name}</span>)}</div>}{m.role === 'assistant' && <ProjectZipButton text={m.text} />}<ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                     pre: ({ children, ...props }) => {
                       const child = Array.isArray(children) ? children[0] : children;
                       const codeClass = child?.props?.className || '';
@@ -491,7 +545,7 @@ function ChatApp({ session }) {
                     }
                   }}>{m.text}</ReactMarkdown></div></div></div>)}{sending && <div className="message-row assistant"><div className="message-avatar"><OrbitMark small/></div><div className="message-body"><div className="message-name">VEX AI</div><div className="typing"><i/><i/><i/></div></div></div>}<div ref={endRef}/></div>}
       </div>
-      <div className="composer-wrap"><form className="composer" onSubmit={e => {e.preventDefault(); sendMessage();}}><textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => {if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault(); sendMessage();}}} placeholder="Ask VEX anything..." rows={1} maxLength={8000} aria-label="Message VEX AI" /><div className="composer-tools"><span><Sparkles size={14}/> Made for your next big idea</span><button className="send-button" type="submit" disabled={!input.trim() || sending} aria-label="Send message"><ArrowUp size={18}/></button></div></form>{error && <p className="chat-error">{error}</p>}<p className="disclaimer">VEX can make mistakes. Check important information. Your conversations are sent to Groq to generate replies.</p></div>
+      <div className="composer-wrap"><input ref={fileInputRef} type="file" multiple accept=".zip,.pdf,.txt,.md,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.csv,.yml,.yaml,.toml,.sql,.sh,.java,.cs,.cpp,.c,.h,.go,.rs,.php,.rb,.swift,.kt,.dart,.log,.ini,.env,.svg,.config,.gradle,.properties,text/*,application/pdf,application/zip" className="hidden-file-input" onChange={e => addFiles(e.target.files)} /><form className="composer" onSubmit={e => {e.preventDefault(); sendMessage();}}><textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => {if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault(); sendMessage();}}} placeholder="Ask VEX anything..." rows={1} maxLength={8000} aria-label="Message VEX AI" /><div className="composer-tools"><span><Sparkles size={14}/> Upload files or ask VEX to search the web</span><div className="composer-actions"><button className="attach-button" type="button" onClick={() => fileInputRef.current?.click()} disabled={sending || readingFiles}><Paperclip size={16}/>{readingFiles ? "Reading…" : "Attach"}</button><button className="send-button" type="submit" disabled={(!input.trim() && !attachments.length) || sending || readingFiles} aria-label="Send message"><ArrowUp size={18}/></button></div></form>{error && <p className="chat-error">{error}</p>}<p className="disclaimer">VEX can make mistakes. Check important information. Uploaded file contents are sent to VEX to answer your message.</p></div>
     </section>
   </main>;
 }
