@@ -8,14 +8,14 @@ VEX AI is an AI assistant by FROSTAI. Use it to ask questions, explore ideas, le
 
 **Website:** https://tvmanisback.github.io/Vex-Ai/
 
-Create an account or sign in with email and password. Google sign-in is available when enabled for the website.
+Create an account or sign in with email and password, or use Google sign-in.
 
 ## Features
 
 - Chat with VEX AI
 - Help with coding, learning, writing, and planning
 - Email/password accounts
-- Google sign-in (when configured)
+- Google sign-in
 - Dark and light appearance
 
 ## Troubleshooting
@@ -33,7 +33,7 @@ Try these steps:
 - If the message says the email is already registered, use **Log in** instead.
 
 ### Google sign-in doesn't work
-Google sign-in must be enabled for VEX AI in its authentication provider settings. If Google redirects back with an error, the website URL may not be included in the allowed redirect URLs.
+If Google sign-in fails, check that the VEX AI website URL is listed in Supabase Authentication → URL Configuration → Redirect URLs. The Google OAuth callback in Google Cloud should be `https://xvtigczxiqunchwwypvf.supabase.co/auth/v1/callback`. An error here does not necessarily mean Google sign-in is disabled.
 
 ### VEX doesn't answer
 - Check your internet connection and try sending the message again.
