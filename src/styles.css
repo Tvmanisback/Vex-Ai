@@ -86,3 +86,44 @@
 .theme-light .markdown-content .code-language{color:#b7c8e2}
 .theme-light .markdown-content .copy-code-button{background:#25344b;border-color:#435873;color:#f0f5ff}
 @media(max-width:760px){.markdown-content .code-block{border-radius:9px}.markdown-content .code-block pre{padding:12px}.markdown-content .code-block pre code{font-size:12px}}
+
+
+/* Explicitly selectable interface modes; device detection picks the initial mode. */
+.ui-mode-switch{display:flex;align-items:center;gap:3px;padding:3px;border:1px solid var(--line);border-radius:9px;background:#0b1220}
+.ui-mode-switch button{display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 8px;border:0;border-radius:6px;background:transparent;color:#8798b4;font-size:10px;font-weight:650}
+.ui-mode-switch button.active{background:#1b2a43;color:#eaf4ff;box-shadow:inset 0 0 0 1px #8ecbff25}
+.ui-mode-switch button:focus-visible{outline:2px solid #8ecbff;outline-offset:2px}
+.ui-mode-mobile .sidebar{width:min(290px,84vw)}
+.ui-mode-mobile .app-header{gap:8px}
+.ui-mode-mobile .header-right{gap:7px}
+.ui-mode-mobile .secure-label{display:none}
+.ui-mode-mobile .ui-mode-switch button span{display:none}
+.ui-mode-mobile .ui-mode-switch button{padding:7px}
+.ui-mode-mobile .conversation{padding-left:clamp(14px,4vw,24px);padding-right:clamp(14px,4vw,24px)}
+.ui-mode-mobile .composer-wrap{padding-left:12px;padding-right:12px}
+.ui-mode-mobile .welcome h1{font-size:clamp(32px,8vw,46px);letter-spacing:-1.5px}
+.ui-mode-mobile .suggestion-grid{grid-template-columns:1fr}
+.ui-mode-mobile .suggestion-card{min-height:76px}
+.ui-mode-mobile .message-row{gap:9px}
+.ui-mode-mobile .message-text{font-size:14px}
+.ui-mode-mobile .header-divider,.ui-mode-mobile .model-label{display:none}
+.ui-mode-pc .sidebar{position:relative;transform:none}
+.ui-mode-pc .sidebar-scrim{display:none}
+@media(min-width:761px){
+  .ui-mode-mobile .sidebar{position:fixed;top:0;bottom:0;left:0;min-height:100dvh;transform:translateX(-105%);transition:transform .22s ease;box-shadow:18px 0 60px #0006}
+  .ui-mode-mobile .sidebar.sidebar-open{transform:translateX(0)}
+  .ui-mode-mobile .sidebar-scrim{display:block;position:fixed;inset:0;z-index:4;border:0;background:#02050bc4}
+  .ui-mode-mobile .chat-area{width:100%;min-width:0}
+  .ui-mode-mobile .welcome{max-width:720px}
+  .ui-mode-mobile .suggestion-grid{grid-template-columns:1fr 1fr}
+  .ui-mode-pc .sidebar{width:255px}
+}
+@media(max-width:760px){
+  .ui-mode-switch{flex:none}
+  .ui-mode-switch button span{display:none}
+  .ui-mode-switch button{padding:7px}
+  .ui-mode-mobile .suggestion-grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  .ui-mode-mobile .sidebar{transition:none}
+}
