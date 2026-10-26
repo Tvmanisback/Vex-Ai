@@ -227,7 +227,7 @@ GENERAL RESPONSE STYLE:
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
         signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
-          model: images.length ? "meta-llama/llama-4-scout-17b-16e-instruct" : "openai/gpt-oss-20b",
+          model: images.length ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b",
           messages,
           temperature: 0.7,
           max_completion_tokens: 1800,
