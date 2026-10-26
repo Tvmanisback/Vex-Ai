@@ -191,10 +191,10 @@ function AuthScreen() {
           <button className={mode === 'login' ? 'active' : ''} onClick={() => changeMode('login')} type="button">Log in</button>
           <button className={mode === 'register' ? 'active' : ''} onClick={() => changeMode('register')} type="button">Create account</button>
         </div>
-        <button className="google-button" onClick={googleSignIn} type="button" disabled={busy}>
+        <button className="google-button" onClick={googleSignIn} type="button" disabled={busy} style={{ marginBottom: "10px" }}>
           <GoogleIcon /> Continue with Google
         </button>
-        <button className="google-button discord-button" onClick={discordSignIn} type="button" disabled={busy} style={{ backgroundColor: "#5865F2", border: "1px solid #5865F2", color: "#fff", opacity: 1, filter: "none" }}>
+        <button className="google-button discord-button" onClick={discordSignIn} type="button" disabled={busy} style={{ backgroundColor: "#5865F2", border: "1px solid #5865F2", color: "#fff", opacity: 1, filter: "none", marginTop: 0, marginBottom: 0 }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.73 5.1A19.3 19.3 0 0 0 15 3.63l-.58 1.18a17.8 17.8 0 0 0-4.84 0L9 3.63A19.3 19.3 0 0 0 4.27 5.1C1.28 9.52.47 13.83.87 18.08a19.4 19.4 0 0 0 5.8 2.94l1.25-2.03a12.6 12.6 0 0 1-1.97-.96l.48-.37c3.8 1.78 7.92 1.78 11.67 0l.49.37c-.63.38-1.29.7-1.98.96l1.25 2.03a19.4 19.4 0 0 0 5.8-2.94c.47-4.93-.8-9.2-3.93-12.98ZM8.55 15.7c-1.14 0-2.08-1.05-2.08-2.34s.92-2.34 2.08-2.34 2.1 1.06 2.08 2.34c0 1.29-.92 2.34-2.08 2.34Zm6.9 0c-1.14 0-2.08-1.05-2.08-2.34s.92-2.34 2.08-2.34 2.1 1.06 2.08 2.34c0 1.29-.92 2.34-2.08 2.34Z"/></svg>
           Continue with Discord
         </button>
