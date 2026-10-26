@@ -321,6 +321,12 @@ function ChatApp({ session }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [settingsUsername, setSettingsUsername] = useState('');
+  const [settingsPassword, setSettingsPassword] = useState('');
+  const [settingsNotice, setSettingsNotice] = useState('');
+  const [settingsError, setSettingsError] = useState('');
+  const [settingsBusy, setSettingsBusy] = useState(false);
   const [mobileSidebar, setMobileSidebar] = useState(false);
   const [dark, setDark] = useState(true);
   const endRef = useRef(null);
@@ -506,6 +512,23 @@ function ChatApp({ session }) {
 
   async function signOut() { await supabase.auth.signOut(); }
   const username = profile?.username || session.user.email?.split('@')[0] || 'friend';
+  async function saveAccountSettings(event) {
+    event.preventDefault(); setSettingsNotice(''); setSettingsError(''); setSettingsBusy(true);
+    try {
+      const nextUsername = settingsUsername.trim();
+      if (!/^[A-Za-z0-9_]{3,24}$/.test(nextUsername)) throw new Error('Username must be 3–24 characters using letters, numbers, or underscores.');
+      const { error: profileError } = await supabase.from('profiles').upsert({ id: session.user.id, username: nextUsername });
+      if (profileError) throw new Error('Could not save username. Check profiles table permissions in Supabase.');
+      const { error: metadataError } = await supabase.auth.updateUser({ data: { username: nextUsername } });
+      if (metadataError) throw metadataError;
+      if (settingsPassword) {
+        if (settingsPassword.length < 8) throw new Error('New password must be at least 8 characters.');
+        const { error: passwordError } = await supabase.auth.updateUser({ password: settingsPassword });
+        if (passwordError) throw passwordError;
+      }
+      setProfile({ ...(profile || {}), username: nextUsername }); setSettingsPassword(''); setSettingsNotice('Account settings saved.');
+    } catch (e) { setSettingsError(e?.message || 'Could not save account settings.'); } finally { setSettingsBusy(false); }
+  }
 
   return <main className={`app-shell ui-mode-${uiMode} ${dark ? 'theme-dark' : 'theme-light'}`}>
     <aside className={`sidebar ${mobileSidebar ? 'sidebar-open' : ''}`} style={uiMode === 'mobile' || uiMode === 'ipad' ? { position: 'fixed', zIndex: 1002, top: uiMode === 'ipad' ? '2vh' : '4vh', left: mobileSidebar ? (uiMode === 'ipad' ? '2vw' : '4vw') : '-100vw', width: uiMode === 'ipad' ? 'min(34vw, 340px)' : '92vw', maxWidth: uiMode === 'ipad' ? '340px' : '520px', height: uiMode === 'ipad' ? '88dvh' : '92dvh', maxHeight: uiMode === 'ipad' ? '88dvh' : '92dvh', overflowY: 'auto', borderRadius: '20px', transition: 'left 220ms ease', boxShadow: mobileSidebar ? '0 24px 80px rgba(0,0,0,.55)' : 'none', visibility: mobileSidebar ? 'visible' : 'hidden' } : undefined}>
@@ -526,9 +549,21 @@ function ChatApp({ session }) {
       <div className="sidebar-bottom">
         <div className="plan-card"><div className="plan-icon"><Sparkles size={16}/></div><div><b>Your ideas, amplified.</b><p>Make room for what's next.</p></div></div>
         <button className="profile-button" onClick={() => setMenuOpen(v => !v)}><span className="avatar">{username.slice(0,1).toUpperCase()}</span><span className="profile-info"><b>{username}</b><small>{session.user.email}</small></span><ChevronDown size={16}/></button>
-        {menuOpen && <div className="profile-menu"><button onClick={() => setDark(v => !v)}>{dark ? <Sun size={16}/> : <Moon size={16}/>} Switch appearance</button><button onClick={signOut}><LogOut size={16}/> Sign out</button></div>}
+        {menuOpen && <div className="profile-menu"><button onClick={() => { setSettingsUsername(username); setSettingsPassword(''); setSettingsNotice(''); setSettingsError(''); setAccountSettingsOpen(true); setMenuOpen(false); }}><Settings2 size={16}/> Account settings</button><button onClick={() => setDark(v => !v)}>{dark ? <Sun size={16}/> : <Moon size={16}/>} Switch appearance</button><button onClick={signOut}><LogOut size={16}/> Sign out</button></div>}
       </div>
     </aside>
+    {accountSettingsOpen && <div role="presentation" onClick={() => setAccountSettingsOpen(false)} style={{position:'fixed',inset:0,zIndex:2000,background:'rgba(0,0,0,.68)',display:'grid',placeItems:'center',padding:18}}>
+      <section role="dialog" aria-modal="true" aria-labelledby="account-settings-title" onClick={e => e.stopPropagation()} style={{width:'min(100%,520px)',maxHeight:'90dvh',overflowY:'auto',background:dark?'#0d1626':'#fff',color:dark?'#edf4ff':'#142033',border:'1px solid #34445f',borderRadius:20,padding:24}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><h2 id="account-settings-title">Account settings</h2><button type="button" onClick={() => setAccountSettingsOpen(false)} aria-label="Close"><X size={20}/></button></div>
+        <form onSubmit={saveAccountSettings} style={{display:'grid',gap:14,marginTop:16}}>
+          <label>Email address<input value={session.user.email || ''} readOnly style={{display:'block',width:'100%',padding:12,marginTop:6,borderRadius:10}}/><small>Email changes are not available here.</small></label>
+          <label>Username<input value={settingsUsername} onChange={e=>setSettingsUsername(e.target.value)} minLength={3} maxLength={24} pattern="[A-Za-z0-9_]{3,24}" required style={{display:'block',width:'100%',padding:12,marginTop:6,borderRadius:10}}/><small>3–24 letters, numbers, or underscores.</small></label>
+          <label>New password (optional)<input type="password" value={settingsPassword} onChange={e=>setSettingsPassword(e.target.value)} minLength={8} autoComplete="new-password" placeholder="Leave blank to keep current password" style={{display:'block',width:'100%',padding:12,marginTop:6,borderRadius:10}}/></label>
+          {settingsError && <p role="alert">{settingsError}</p>}{settingsNotice && <p role="status">{settingsNotice}</p>}
+          <button type="submit" disabled={settingsBusy}>{settingsBusy?'Saving…':'Save settings'}</button>
+        </form>
+      </section>
+    </div>}
     {mobileSidebar && <button className="sidebar-scrim" onClick={() => setMobileSidebar(false)} aria-label="Close navigation" />}
     <section className="chat-area">
       <header className="app-header"><div className="header-left"><button className="menu-button" onClick={() => setMobileSidebar(true)} aria-label="Open chat navigation"><Menu size={20}/></button><button className="mobile-chats-button" onClick={() => setMobileSidebar(true)} style={uiMode === 'mobile' || uiMode === 'ipad' ? { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 12, fontWeight: 700, flexShrink: 0 } : undefined}><MessageCircle size={16}/><span>Chats</span></button><div className="vex-mini"><OrbitMark small/><span>VEX <b>AI</b></span></div><span className="header-divider"/><span className="model-label"><span className="live-dot"/> VEX assistant</span></div><div className="header-right"><span className="secure-label"><ShieldCheck size={14}/> Private space</span><div className="ui-mode-switch" role="group" aria-label="Interface layout"><button type="button" className={uiMode === 'mobile' ? 'active' : ''} onClick={() => setUiMode('mobile')} title="Mobile layout" aria-label="Use mobile layout"><Smartphone size={15}/><span>Mobile</span></button><button type="button" className={uiMode === 'ipad' ? 'active' : ''} onClick={() => setUiMode('ipad')} title="iPad layout" aria-label="Use iPad layout"><Tablet size={15}/><span>iPad</span></button><button type="button" className={uiMode === 'pc' ? 'active' : ''} onClick={() => setUiMode('pc')} title="Desktop layout" aria-label="Use desktop layout"><Monitor size={15}/><span>PC</span></button></div><button className="header-icon" onClick={() => setDark(v => !v)} title="Toggle appearance">{dark ? <Sun size={17}/> : <Moon size={17}/>}</button></div></header>
