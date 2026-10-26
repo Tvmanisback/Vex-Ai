@@ -1,81 +1,42 @@
-# FROSTAI — VEX AI
+# VEX AI
 
-A dark, cosmic-themed AI assistant website with email/password registration, unique usernames, Google sign-in, and a Gemini-powered chat endpoint protected by Supabase Auth.
+**Your space to think bigger.**
 
-## Stack
+VEX AI is an AI assistant from **FROSTAI**, designed to help you think through ideas, learn new things, write, code, and get work done — all in one focused workspace.
 
-- React + Vite
-- Supabase Auth (email/password + Google OAuth)
-- Supabase Postgres + Row Level Security for user profiles
-- Supabase Edge Function for Gemini calls (the Gemini key stays server-side)
-- Responsive cosmic/orbital VEX mark, dark and light workspace themes
+## ✨ What you can do
 
-## 1. Create your Supabase project
+- **Chat with VEX** — ask questions, explore ideas, and work through problems.
+- **Get help with coding** — understand concepts, debug errors, and plan projects.
+- **Learn step by step** — break down unfamiliar topics into manageable explanations.
+- **Write and plan** — brainstorm, organize tasks, and shape your ideas.
+- **Sign in your way** — use email and password or Google sign-in.
+- **Make it yours** — choose between dark and light appearance.
+- **Keep your account private** — sign in to access your own workspace.
 
-Create a project at https://supabase.com/dashboard.
+## 🚀 Use VEX AI
 
-In **SQL Editor**, run the complete file `supabase/schema.sql`. It creates the `profiles` table, enforces username format/uniqueness, enables RLS, and creates a profile automatically when a new email or Google account is created.
+Open the live website:
 
-## 2. Configure the frontend
+**https://tvmanisback.github.io/Vex-Ai/**
 
-Copy `.env.example` to `.env` and fill in the values from **Project Settings → API**:
+Create an account or sign in, then start a conversation. If account confirmation is enabled, check your email for a confirmation message.
 
-```env
-VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY
-```
+## 🔐 Privacy and important information
 
-Use the publishable/anon key only. Never expose a service-role or secret key in browser code.
+VEX AI uses Supabase to manage accounts and Gemini to generate AI responses. Messages you send are processed by the AI service to create replies. Do not enter passwords, payment details, or other sensitive information into chat.
 
-## 3. Enable email and Google login
+AI responses can be inaccurate or out of date. Verify important information before relying on it.
 
-In Supabase Dashboard:
+## 🛠️ Having trouble?
 
-1. Open **Authentication → Providers** and enable **Email**.
-2. Enable **Google** and enter the OAuth Client ID and Client Secret from Google Cloud Console.
-3. In **Authentication → URL Configuration**, set your local Site URL to `http://localhost:5173` while developing.
-4. Add `http://localhost:5173` and your deployed website origin to the allowed redirect URLs.
-5. In Google Cloud Console, configure the OAuth consent screen and add the Supabase callback URL shown by the Google provider settings as an authorized redirect URI.
+- **The website is blank:** refresh the page after a moment. If it stays blank, check the project's latest deployment status in the repository's **Actions** tab.
+- **Can't sign in with Google:** Google sign-in must be enabled and configured for the site.
+- **Can't create an account:** check that your email address is correct and look for an email confirmation message.
+- **VEX doesn't reply:** the chat service may be temporarily unavailable or have reached an API quota.
 
-Email confirmation may be enabled. If it is, new users must confirm their email before they can sign in. Google sign-in can be used after its provider is configured.
+If the problem continues, open an issue in this repository and describe what happened. Never post passwords, API keys, access tokens, or other secrets in an issue.
 
-## 4. Set up Gemini chat securely
+## About FROSTAI
 
-Create a Gemini API key in Google AI Studio. Do **not** put it in `.env` or any `VITE_*` variable.
-
-Install the Supabase CLI, sign in, and link the project:
-
-```bash
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
-supabase secrets set GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-supabase functions deploy vex-chat
-```
-
-The function validates the Supabase user session before sending a prompt to Gemini. It uses the `gemini-2.5-flash` model; change the model in `supabase/functions/vex-chat/index.ts` if needed. Gemini usage and quotas are controlled by your Google AI Studio project.
-
-## 5. Run locally
-
-```bash
-npm install
-npm run dev
-```
-
-Open the local URL printed by Vite (normally `http://localhost:5173`).
-
-Build a production bundle with:
-
-```bash
-npm run build
-npm run preview
-```
-
-For Netlify, Vercel, or another static host, set the two `VITE_SUPABASE_*` environment variables in that host's project settings and deploy the Vite build. Configure the deployed origin in Supabase Auth redirect URLs.
-
-## Security notes
-
-- Supabase Auth handles password hashing and sessions; the app never stores raw passwords.
-- Profile rows are protected by Row Level Security. Users can only read their own profile.
-- The Gemini key belongs in Supabase Edge Function secrets only.
-- Keep production rate limits and billing alerts enabled for your Gemini API and Supabase project.
-- VEX is a general-purpose assistant, not a substitute for licensed mental-health care or emergency support.
+VEX AI is a FROSTAI project built to give people a useful place to ask questions, explore ideas, and get started on their next big thing.
