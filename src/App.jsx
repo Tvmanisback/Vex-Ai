@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowUp, Atom, Check, ChevronDown, Code2, Compass, Eye, EyeOff,
   GraduationCap, LogOut, Menu, MessageCircle, Moon, Plus, Settings2,
-  ShieldCheck, Sparkles, Sun, Video, BriefcaseBusiness, X, Smartphone, Monitor
+  ShieldCheck, Sparkles, Sun, Video, BriefcaseBusiness, X, Smartphone, Monitor, Tablet
 } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import ReactMarkdown from 'react-markdown';
@@ -226,13 +226,13 @@ function ChatApp({ session }) {
   const [uiMode, setUiMode] = useState(() => {
     try {
       const saved = localStorage.getItem('vex-ui-mode');
-      if (saved === 'mobile' || saved === 'pc') return saved;
+      if (saved === 'mobile' || saved === 'ipad' || saved === 'pc') return saved;
     } catch (_) {}
     const nav = window.navigator;
     const ua = nav.userAgent || '';
     const isMobileUA = Boolean(nav.userAgentData?.mobile) || /iPhone|iPod|Android.*Mobile|Windows Phone|Mobile/i.test(ua);
     const isTablet = /iPad|Tablet|Android(?!.*Mobile)/i.test(ua) || (nav.maxTouchPoints > 1 && Math.min(window.screen.width, window.screen.height) <= 1100);
-    return isMobileUA || isTablet ? 'mobile' : 'pc';
+    return isTablet ? 'ipad' : isMobileUA ? 'mobile' : 'pc';
   });
   useEffect(() => {
     try { localStorage.setItem('vex-ui-mode', uiMode); } catch (_) {}
@@ -398,7 +398,7 @@ function ChatApp({ session }) {
     </aside>
     {mobileSidebar && <button className="sidebar-scrim" onClick={() => setMobileSidebar(false)} aria-label="Close navigation" />}
     <section className="chat-area">
-      <header className="app-header"><div className="header-left"><button className="menu-button" onClick={() => setMobileSidebar(true)} aria-label="Open chat navigation"><Menu size={20}/></button><button className="mobile-chats-button" onClick={() => setMobileSidebar(true)} style={uiMode === 'mobile' ? { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 12, fontWeight: 700, flexShrink: 0 } : undefined}><MessageCircle size={16}/><span>Chats</span></button><div className="vex-mini"><OrbitMark small/><span>VEX <b>AI</b></span></div><span className="header-divider"/><span className="model-label"><span className="live-dot"/> VEX assistant</span></div><div className="header-right"><span className="secure-label"><ShieldCheck size={14}/> Private space</span><div className="ui-mode-switch" role="group" aria-label="Interface layout"><button type="button" className={uiMode === 'mobile' ? 'active' : ''} onClick={() => setUiMode('mobile')} title="Mobile layout" aria-label="Use mobile layout"><Smartphone size={15}/><span>Mobile</span></button><button type="button" className={uiMode === 'pc' ? 'active' : ''} onClick={() => setUiMode('pc')} title="Desktop layout" aria-label="Use desktop layout"><Monitor size={15}/><span>PC</span></button></div><button className="header-icon" onClick={() => setDark(v => !v)} title="Toggle appearance">{dark ? <Sun size={17}/> : <Moon size={17}/>}</button></div></header>
+      <header className="app-header"><div className="header-left"><button className="menu-button" onClick={() => setMobileSidebar(true)} aria-label="Open chat navigation"><Menu size={20}/></button><button className="mobile-chats-button" onClick={() => setMobileSidebar(true)} style={uiMode === 'mobile' ? { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 12, fontWeight: 700, flexShrink: 0 } : undefined}><MessageCircle size={16}/><span>Chats</span></button><div className="vex-mini"><OrbitMark small/><span>VEX <b>AI</b></span></div><span className="header-divider"/><span className="model-label"><span className="live-dot"/> VEX assistant</span></div><div className="header-right"><span className="secure-label"><ShieldCheck size={14}/> Private space</span><div className="ui-mode-switch" role="group" aria-label="Interface layout"><button type="button" className={uiMode === 'mobile' ? 'active' : ''} onClick={() => setUiMode('mobile')} title="Mobile layout" aria-label="Use mobile layout"><Smartphone size={15}/><span>Mobile</span></button><button type="button" className={uiMode === 'ipad' ? 'active' : ''} onClick={() => setUiMode('ipad')} title="iPad layout" aria-label="Use iPad layout"><Tablet size={15}/><span>iPad</span></button><button type="button" className={uiMode === 'pc' ? 'active' : ''} onClick={() => setUiMode('pc')} title="Desktop layout" aria-label="Use desktop layout"><Monitor size={15}/><span>PC</span></button></div><button className="header-icon" onClick={() => setDark(v => !v)} title="Toggle appearance">{dark ? <Sun size={17}/> : <Moon size={17}/>}</button></div></header>
       <div className={`conversation ${messages.length ? 'has-messages' : ''}`}>
         {messages.length === 0 ? <div className="welcome">
           <div className="welcome-emblem"><OrbitMark/></div>
