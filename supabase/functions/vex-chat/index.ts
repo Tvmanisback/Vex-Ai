@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     let message = typeof body.message === "string" ? body.message.trim() : "";
     const history = Array.isArray(body.history) ? body.history.slice(-12) : [];
-    if (!message || message.length > 8000) return json({ error: "Enter a message under 8,000 characters." }, 400);
+    if (!message || message.length > 120000) return json({ error: "Your message and attached files exceed the 120,000-character limit." }, 400);
 
     // Lightweight web access: search public web results and fetch explicitly supplied public URLs.
     const wantsSearch = /\b(search|look up|find online|latest|current|news about|on the web|web search)\b/i.test(message);
