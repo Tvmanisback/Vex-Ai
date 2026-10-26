@@ -133,25 +133,11 @@ function AuthScreen() {
   async function yapinSignIn() {
     setError(''); setNotice('');
     if (!isSupabaseConfigured) {
-      setError('Connect Supabase first, then configure Yapin’ under Authentication → Sign In / Providers → Custom Providers.');
+      setError('Supabase is not connected yet.');
       return;
     }
     setBusy(true);
-    try {
-      const { error: authError } = await supabase.auth.signInWithOAuth({
-        provider: 'custom:yapin',
-        options: { redirectTo: window.location.href.split('#')[0].split('?')[0] },
-      });
-      if (authError) throw authError;
-    } catch (e) {
-      const message = e?.message || 'Yapin’ sign-in could not start.';
-      if (/provider.*not enabled|unsupported provider|invalid.*provider/i.test(message)) {
-        setError('Yapin’ sign-in is not configured yet. In Supabase → Authentication → Sign In / Providers → Custom Providers, create the OAuth provider with identifier “yapin” and authorization URL https://www.yapin.gg/oauth/authorize.');
-      } else {
-        setError(message);
-      }
-      setBusy(false);
-    }
+    window.location.assign('https://xvtigczxiqunchwwypvf.supabase.co/functions/v1/yapin-auth/start');
   }
 
   return <main className="auth-layout">
