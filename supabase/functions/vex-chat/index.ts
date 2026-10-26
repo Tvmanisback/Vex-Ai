@@ -173,7 +173,7 @@ GENERAL RESPONSE STYLE:
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
           signal: AbortSignal.timeout(15000),
           body: JSON.stringify({
-            model: images.length ? "meta-llama/llama-4-scout-17b-16e-instruct" : "openai/gpt-oss-20b",
+            model: images.length ? "qwen/qwen3.8-27b" : "openai/gpt-oss-20b",
             messages: [
               { role: "system", content: "Return only a short chat title of 3–6 words." },
               { role: "user", content: titlePrompt },
