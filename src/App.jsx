@@ -130,6 +130,32 @@ function AuthScreen() {
     }
   }
 
+  async function discordSignIn() {
+    setError(''); setNotice('');
+    if (!isSupabaseConfigured) {
+      setError('Supabase is not connected yet.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: { redirectTo: window.location.href.split('#')[0].split('?')[0] },
+      });
+      if (authError) throw authError;
+    } catch (e) {
+      const message = e?.message || 'Discord sign-in could not start.';
+      if (/provider.*not enabled|unsupported provider/i.test(message)) {
+        setError('Discord sign-in is not enabled yet. In Supabase, open Authentication → Sign In / Providers → Discord, enable it, add your Discord Client ID and Client Secret, then save.');
+      } else if (/redirect.*(allow|url|not)/i.test(message)) {
+        setError('Add https://tvmanisback.github.io/Vex-Ai/ to Supabase Authentication → URL Configuration → Redirect URLs.');
+      } else {
+        setError(message);
+      }
+      setBusy(false);
+    }
+  }
+
   async function yapinSignIn() {
     setError(''); setNotice('');
     if (!isSupabaseConfigured) {
@@ -167,6 +193,10 @@ function AuthScreen() {
         </div>
         <button className="google-button" onClick={googleSignIn} type="button" disabled={busy}>
           <GoogleIcon /> Continue with Google
+        </button>
+        <button className="google-button discord-button" onClick={discordSignIn} type="button" disabled={busy} style={{ backgroundColor: "#5865F2", border: "1px solid #5865F2", color: "#fff", opacity: 1, filter: "none" }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.73 5.1A19.3 19.3 0 0 0 15 3.63l-.58 1.18a17.8 17.8 0 0 0-4.84 0L9 3.63A19.3 19.3 0 0 0 4.27 5.1C1.28 9.52.47 13.83.87 18.08a19.4 19.4 0 0 0 5.8 2.94l1.25-2.03a12.6 12.6 0 0 1-1.97-.96l.48-.37c3.8 1.78 7.92 1.78 11.67 0l.49.37c-.63.38-1.29.7-1.98.96l1.25 2.03a19.4 19.4 0 0 0 5.8-2.94c.47-4.93-.8-9.2-3.93-12.98ZM8.55 15.7c-1.14 0-2.08-1.05-2.08-2.34s.92-2.34 2.08-2.34 2.1 1.06 2.08 2.34c0 1.29-.92 2.34-2.08 2.34Zm6.9 0c-1.14 0-2.08-1.05-2.08-2.34s.92-2.34 2.08-2.34 2.1 1.06 2.08 2.34c0 1.29-.92 2.34-2.08 2.34Z"/></svg>
+          Continue with Discord
         </button>
         <button className="google-button yapin-button" onClick={yapinSignIn} type="button" disabled={busy} style={{ backgroundColor: "#ff7a1a", border: "1px solid #ff7a1a", color: "#fff", opacity: 1, filter: "none" }}>
           <img src="https://yapin.gg/favicon.ico?v=2" alt="Yapin’" width="20" height="20" style={{ display: "block", width: 20, height: 20, objectFit: "contain", borderRadius: 4, flexShrink: 0 }} onError={e => { e.currentTarget.src = "https://www.yapin.gg/favicon.ico?v=2"; }} /> <span>Login with Yapin’</span>
