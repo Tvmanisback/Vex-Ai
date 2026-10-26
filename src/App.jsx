@@ -398,12 +398,20 @@ function ChatApp({ session }) {
     setError('');
     try {
       const next = [];
-      let totalChars = attachments.reduce((n, a) => n + a.content.length, 0);
+      let totalChars = attachments.reduce((n, a) => n + (a.content || '').length, 0);
       for (const file of picked) {
         if (file.size > 10 * 1024 * 1024) throw new Error(file.name + ' is over the 10 MB per-file limit.');
         const name = file.name;
         const lower = name.toLowerCase();
-        if (/\.zip$/i.test(lower) || file.type === 'application/zip') {
+        if (file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(lower)) {
+          const imageData = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Could not read image: ' + name));
+            reader.readAsDataURL(file);
+          });
+          next.push({ name, content: '', imageData, mimeType: file.type || 'image/jpeg' });
+        } else if (/\.zip$/i.test(lower) || file.type === 'application/zip') {
           const zip = await JSZip.loadAsync(file);
           for (const [path, entry] of Object.entries(zip.files)) {
             if (entry.dir || path.startsWith('__MACOSX/') || /(^|\/)\./.test(path)) continue;
@@ -441,8 +449,9 @@ function ChatApp({ session }) {
   async function sendMessage(text = input) {
     const userText = text.trim();
     if ((!userText && !attachments.length) || sending || readingFiles) return;
-    const fileContext = attachments.map(file => '\n\n--- ATTACHED FILE: ' + file.name + ' ---\n' + file.content + '\n--- END FILE ---').join('');
-    const prompt = (userText || 'Please inspect the attached file(s) and help me with them.') + (fileContext ? '\n\nThe user attached these files. Read their contents and use them as context; refer to files by filename.\n' + fileContext : '');
+    const fileContext = attachments.filter(file => !file.imageData).map(file => '\n\n--- ATTACHED FILE: ' + file.name + ' ---\n' + file.content + '\n--- END FILE ---').join('');
+    const imageAttachments = attachments.filter(file => file.imageData).map(file => ({ name: file.name, dataUrl: file.imageData, mimeType: file.mimeType }));
+    const prompt = (userText || 'Please inspect the attached file(s) and help me with them.') + (fileContext ? '\n\nThe user attached these files. Read their contents and use them as context; refer to files by filename.\n' + fileContext : '') + (imageAttachments.length ? '\n\nThe user attached ' + imageAttachments.length + ' image(s): ' + imageAttachments.map(f => f.name).join(', ') + '. Analyze the actual image(s) and answer the user request.' : '');
     const attachedNames = attachments.map(file => file.name);
     setAttachments([]);
     setError('');
@@ -458,7 +467,7 @@ function ChatApp({ session }) {
     let chatTitle = conversations.find(chat => chat.id === chatId)?.title || fallbackTitle;
     try {
       const history = previousMessages.slice(-12).map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.text }] }));
-      const { data, error: invokeError } = await supabase.functions.invoke('vex-chat', { body: { message: prompt, history } });
+      const { data, error: invokeError } = await supabase.functions.invoke('vex-chat', { body: { message: prompt, history, images: imageAttachments.map(({name, dataUrl, mimeType}) => ({name, dataUrl, mimeType})) } });
       if (invokeError) throw invokeError;
       if (data?.error) throw new Error(data.error);
 
@@ -545,7 +554,7 @@ function ChatApp({ session }) {
                     }
                   }}>{m.text}</ReactMarkdown></div></div></div>)}{sending && <div className="message-row assistant"><div className="message-avatar"><OrbitMark small/></div><div className="message-body"><div className="message-name">VEX AI</div><div className="typing"><i/><i/><i/></div></div></div>}<div ref={endRef}/></div>}
       </div>
-      <div className="composer-wrap"><input ref={fileInputRef} type="file" multiple accept=".zip,.pdf,.txt,.md,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.csv,.yml,.yaml,.toml,.sql,.sh,.java,.cs,.cpp,.c,.h,.go,.rs,.php,.rb,.swift,.kt,.dart,.log,.ini,.env,.svg,.config,.gradle,.properties,text/*,application/pdf,application/zip" className="hidden-file-input" onChange={e => addFiles(e.target.files)} /><form className="composer" onSubmit={e => {e.preventDefault(); sendMessage();}}><textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => {if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault(); sendMessage();}}} placeholder="Ask VEX anything..." rows={1} maxLength={8000} aria-label="Message VEX AI" /><div className="composer-tools"><span><Sparkles size={14}/> Upload files or ask VEX to search the web</span><div className="composer-actions"><button className="attach-button" type="button" onClick={() => fileInputRef.current?.click()} disabled={sending || readingFiles}><Paperclip size={16}/>{readingFiles ? "Reading…" : "Attach"}</button><button className="send-button" type="submit" disabled={(!input.trim() && !attachments.length) || sending || readingFiles} aria-label="Send message"><ArrowUp size={18}/></button></div></div></form>{attachments.length > 0 && <div className="attachment-tray">{attachments.map((file, i) => <span className="attachment-chip" key={file.name + i}><Paperclip size={12}/>{file.name}<button type="button" onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} aria-label={"Remove " + file.name}>×</button></span>)}</div>}{error && <p className="chat-error">{error}</p>}<p className="disclaimer">VEX can make mistakes. Check important information. Uploaded file contents are sent to VEX to answer your message.</p></div>
+      <div className="composer-wrap"><input ref={fileInputRef} type="file" multiple accept="image/*,.zip,.pdf,.txt,.md,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.csv,.yml,.yaml,.toml,.sql,.sh,.java,.cs,.cpp,.c,.h,.go,.rs,.php,.rb,.swift,.kt,.dart,.log,.ini,.env,.svg,.config,.gradle,.properties,text/*,application/pdf,application/zip" className="hidden-file-input" onChange={e => addFiles(e.target.files)} /><form className="composer" onSubmit={e => {e.preventDefault(); sendMessage();}}><textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => {if (e.key === 'Enter' && !e.shiftKey) {e.preventDefault(); sendMessage();}}} placeholder="Ask VEX anything..." rows={1} maxLength={8000} aria-label="Message VEX AI" /><div className="composer-tools"><span><Sparkles size={14}/> Upload files or ask VEX to search the web</span><div className="composer-actions"><button className="attach-button" type="button" onClick={() => fileInputRef.current?.click()} disabled={sending || readingFiles}><Paperclip size={16}/>{readingFiles ? "Reading…" : "Attach"}</button><button className="send-button" type="submit" disabled={(!input.trim() && !attachments.length) || sending || readingFiles} aria-label="Send message"><ArrowUp size={18}/></button></div></div></form>{attachments.length > 0 && <div className="attachment-tray">{attachments.map((file, i) => <span className="attachment-chip" key={file.name + i}><Paperclip size={12}/>{file.name}<button type="button" onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} aria-label={"Remove " + file.name}>×</button></span>)}</div>}{error && <p className="chat-error">{error}</p>}<p className="disclaimer">VEX can make mistakes. Check important information. Uploaded file contents are sent to VEX to answer your message.</p></div>
     </section>
   </main>;
 }
