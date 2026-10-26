@@ -7,7 +7,8 @@ import {
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Copy, Download } from 'lucide-react';
+import { Copy, Download, FileArchive } from 'lucide-react';
+import JSZip from 'jszip';
 
 const suggestions = [
   { icon: Code2, title: 'Help me code', text: 'Debug code, explain concepts, and build projects.' },
@@ -78,6 +79,33 @@ function CodeBlock({ language, code, children }) {
   </div>;
 }
 
+function ProjectZipButton({ text }) {
+  const [busy, setBusy] = useState(false);
+  const files = [];
+  const pattern = /(?:^|\\n)(?:\\*\\*|###?\\s*)?(?:File:\\s*)?([\\x60][^\\n\\x60]+[\\x60]|[A-Za-z0-9_.@/-]+\\.[A-Za-z0-9_-]+)(?:\\*\\*)?\\s*\\n\\x60\\x60\\x60([\\w.+-]*)\\s*\\n([\\s\\S]*?)\\n\\x60\\x60\\x60/g;
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    const filename = match[1].replace(/^\\x60|\\x60$/g, '').trim();
+    if (!filename || filename.includes(' ') || filename.startsWith('http')) continue;
+    files.push({ filename, content: match[3] });
+  }
+  if (!files.length) return null;
+  async function downloadZip() {
+    setBusy(true);
+    try {
+      const zip = new JSZip();
+      for (const file of files) zip.file(file.filename, file.content);
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = 'vex-project.zip';
+      document.body.appendChild(link); link.click(); link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) { console.error('ZIP creation failed:', error); }
+    finally { setBusy(false); }
+  }
+  return <div className="project-download"><button type="button" className="copy-code-button" onClick={downloadZip} disabled={busy}><FileArchive size={14}/>{busy ? 'Creating ZIP…' : 'Download project ZIP (' + files.length + ' files)'}</button></div>;
+}
 function OrbitMark({ small = false }) {
   return <span className={`orbit-mark ${small ? 'orbit-mark-small' : ''}`} aria-hidden="true">
     <span className="orbit-core" /><span className="orbit-ring orbit-ring-one" /><span className="orbit-ring orbit-ring-two" />
@@ -432,7 +460,7 @@ function ChatApp({ session }) {
           <h1>Hey {username},<br/><span>what's on your mind?</span></h1>
           <p className="welcome-copy">I'm VEX. Let's untangle a problem, learn something new,<br className="desktop-break"/> or turn that idea into something real.</p>
           <div className="suggestion-grid">{suggestions.map(({icon: Icon, title, text}) => <button className="suggestion-card" key={title} onClick={() => { setInput(title === 'Help me code' ? 'Help me with a coding project.' : title === 'Learn something' ? 'Teach me something interesting, step by step.' : title === 'Get work done' ? 'Help me plan my tasks for today.' : 'Help me brainstorm a creative idea.'); inputRef.current?.focus(); }}><span className="suggestion-icon"><Icon size={18}/></span><b>{title}</b><small>{text}</small></button>)}</div>
-        </div> : <div className="message-list">{messages.map((m,i) => <div className={`message-row ${m.role}`} key={i}><div className="message-avatar">{m.role === 'assistant' ? <OrbitMark small/> : username.slice(0,1).toUpperCase()}</div><div className="message-body"><div className="message-name">{m.role === 'assistant' ? 'VEX AI' : username}</div><div className={"message-text markdown-content " + (m.role === 'user' ? 'user-markdown' : '')}><ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+        </div> : <div className="message-list">{messages.map((m,i) => <div className={`message-row ${m.role}`} key={i}><div className="message-avatar">{m.role === 'assistant' ? <OrbitMark small/> : username.slice(0,1).toUpperCase()}</div><div className="message-body"><div className="message-name">{m.role === 'assistant' ? 'VEX AI' : username}</div><div className={"message-text markdown-content " + (m.role === 'user' ? 'user-markdown' : '')}>{m.role === 'assistant' && <ProjectZipButton text={m.text} />}<ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                     pre: ({ children, ...props }) => {
                       const child = Array.isArray(children) ? children[0] : children;
                       const codeClass = child?.props?.className || '';
