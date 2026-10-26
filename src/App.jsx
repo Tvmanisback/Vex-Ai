@@ -75,10 +75,20 @@ function AuthScreen() {
     try {
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin, queryParams: { prompt: 'select_account' } },
+        options: { redirectTo: window.location.href.split('#')[0].split('?')[0], queryParams: { prompt: 'select_account' } },
       });
       if (authError) throw authError;
-    } catch (e) { setError(e?.message || 'Google sign-in could not start.'); setBusy(false); }
+    } catch (e) {
+      const message = e?.message || 'Google sign-in could not start.';
+      if (/provider.*not enabled|unsupported provider/i.test(message)) {
+        setError('Supabase rejected the Google provider. Check Authentication → Sign In / Providers → Google is enabled for this exact Supabase project, then save the provider settings.');
+      } else if (/redirect.*(allow|url|not)/i.test(message)) {
+        setError('Google sign-in reached a redirect URL error. Add https://tvmanisback.github.io/Vex-Ai/ to Supabase Authentication → URL Configuration → Redirect URLs.');
+      } else {
+        setError(message);
+      }
+      setBusy(false);
+    }
   }
 
   return <main className="auth-layout">
