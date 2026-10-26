@@ -145,3 +145,43 @@
 @media(min-width:761px){
   .mobile-chats-button{display:none}
 }
+
+
+/* Keep the desktop navigation beside you while the page scrolls, and make chat history independently scrollable. */
+@media (min-width: 761px) {
+  .ui-mode-pc .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    align-self: flex-start;
+    scrollbar-width: thin;
+    scrollbar-color: #344765 transparent;
+  }
+  .ui-mode-pc .chat-history-list {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: min(42vh, 420px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #344765 transparent;
+  }
+}
+.chat-history-list {
+  scrollbar-width: thin;
+  scrollbar-color: #344765 transparent;
+  overscroll-behavior: contain;
+}
+.chat-history-list::-webkit-scrollbar,
+.ui-mode-pc .sidebar::-webkit-scrollbar { width: 6px; }
+.chat-history-list::-webkit-scrollbar-thumb,
+.ui-mode-pc .sidebar::-webkit-scrollbar-thumb { background: #344765; border-radius: 99px; }
+.theme-light .chat-history-list,
+.theme-light .ui-mode-pc .sidebar { scrollbar-color: #c2cee0 transparent; }
+.theme-light .chat-history-list::-webkit-scrollbar-thumb,
+.theme-light .ui-mode-pc .sidebar::-webkit-scrollbar-thumb { background: #c2cee0; }
