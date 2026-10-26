@@ -1,15 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  // Include Supabase SDK headers used by current browser clients.
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-api-version, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Max-Age": "86400",
-};
+import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { status: 200, headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
 
   const json = (body: unknown, status = 200) =>
@@ -112,7 +105,7 @@ Deno.serve(async (req) => {
     if (!text) return json({ error: "VEX returned an empty response. Try again." }, 502);
     return json({ reply: text });
   } catch (error) {
-    console.error("VEX chat error:", error);
-    return json({ error: "Something went wrong. Please try again." }, 500);
+    console.error("VEX chat error:", error instanceof Error ? `${error.name}: ${error.message}\n${error.stack ?? ""}` : String(error));
+    return json({ error: "VEX encountered a server error. Please try again." }, 500);
   }
 });
