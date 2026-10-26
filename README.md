@@ -14,13 +14,20 @@ VEX AI is an AI assistant from **FROSTAI**, designed to help you think through i
 - **Make it yours** — choose between dark and light appearance.
 - **Keep your account private** — sign in to access your own workspace.
 
-## 🚀 Use VEX AI
+## 🚀 Deploy VEX AI without a GitHub Actions workflow
 
-Open the live website:
+This repository is a React + Vite app. GitHub Pages cannot run the source file `src/main.jsx` directly. It needs a production build, and this repository intentionally does not use a YAML workflow.
 
-**https://tvmanisback.github.io/Vex-Ai/**
+The project is already configured for Vercel in `vercel.json`. To publish it without adding a workflow:
 
-Create an account or sign in, then start a conversation. If account confirmation is enabled, check your email for a confirmation message.
+1. Open [Vercel](https://vercel.com/) and sign in with GitHub.
+2. Choose **Add New → Project**, then import **Tvmanisback/Vex-Ai**.
+3. Keep the detected Vite settings. The repository's `vercel.json` specifies `npm install`, `npm run build`, and `dist` as the output directory.
+4. Click **Deploy**. Vercel builds the app from the source and publishes the generated site.
+5. In Supabase → Authentication → URL Configuration, set the Vercel deployment URL as the **Site URL** and add it to **Redirect URLs**. Keep your local or other production URLs there too if needed.
+6. In Supabase → Authentication → Providers, make sure Google is enabled and its OAuth redirect URL matches the Supabase callback URL shown by Supabase.
+
+The Supabase project URL and publishable key are public browser configuration. Never put a Supabase service-role key or Gemini API key in frontend files. The Gemini key belongs in the Supabase Edge Function secret settings.
 
 ## 🔐 Privacy and important information
 
@@ -30,12 +37,12 @@ AI responses can be inaccurate or out of date. Verify important information befo
 
 ## 🛠️ Having trouble?
 
-- **The website is blank:** the published page may be serving the Vite source files instead of a production build. The site must be built with `npm run build`, and GitHub Pages must publish the generated `dist` folder.
-- **Can't sign in with Google:** Google sign-in must be enabled and configured for the site.
-- **Can't create an account:** check that your email address is correct and look for an email confirmation message.
-- **VEX doesn't reply:** the chat service may be temporarily unavailable or have reached an API quota.
+- **The GitHub Pages URL is blank:** GitHub Pages is serving Vite source files rather than a production build. Do not publish the repository root as a static page. Deploy with the Vercel steps above, or publish the generated `dist` folder using a build-capable host.
+- **Can't sign in with Google:** enable Google in Supabase Authentication → Providers and configure the authorized redirect URLs in Google Cloud and Supabase.
+- **Can't create an account:** check the email address and look for a confirmation message.
+- **VEX doesn't reply:** confirm the Supabase Edge Function named `vex-chat` is deployed and its `GEMINI_API_KEY` secret is configured; check function logs and Gemini quota if it still fails.
 
-If the problem continues, open an issue in this repository and describe what happened. Never post passwords, API keys, access tokens, or other secrets in an issue.
+Never post passwords, API keys, access tokens, or other secrets in an issue.
 
 ## About FROSTAI
 
