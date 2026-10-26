@@ -36,31 +36,68 @@ Deno.serve(async (req) => {
     if (!message || message.length > 120000) return json({ error: "Your message and attached files exceed the 120,000-character limit." }, 400);
 
     // Lightweight web access: search public web results and fetch explicitly supplied public URLs.
-    const wantsSearch = /\b(search|look up|find online|latest|current|news about|on the web|web search)\b/i.test(message);
+    const wantsSearch = /\b(search|browse|look up|find online|latest|current|recent|today|this week|headlines?|news|internet|on the web|web search|what happened|release notes|price of|weather|who won)\b/i.test(message);
     const urls = [...message.matchAll(/https?:\/\/[^\s<>"')\]]+/gi)].map(m => m[0].replace(/[.,!?;]+$/, '')).slice(0, 2);
     const webNotes: string[] = [];
     if (wantsSearch) {
       const query = message.replace(/https?:\/\/\S+/g, '').slice(0, 300);
-      try {
-        const searchRes = await fetch("https://html.duckduckgo.com/html/?q=" + encodeURIComponent(query), {
-          headers: { "User-Agent": "Mozilla/5.0 (compatible; VEXAI/1.0)", "Accept": "text/html" },
-          signal: AbortSignal.timeout(9000),
-        });
-        if (searchRes.ok) {
-          const html = await searchRes.text();
-          const clean = (value: string) => value.replace(/<[^>]*>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
-          const links = [...html.matchAll(/<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)].slice(0, 6);
-          const snippets = [...html.matchAll(/<a[^>]+class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/gi)].map(m => clean(m[1]));
-          for (let i = 0; i < links.length; i++) {
-            let href = links[i][1].replace(/&amp;/g, "&");
-            if (href.startsWith("//")) href = "https:" + href;
-            if (href.startsWith("/")) {
-              try { href = new URL(href, "https://html.duckduckgo.com").toString(); } catch { continue; }
+      const clean = (value: string) => value
+        .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'")
+        .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ")
+        .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+        .replace(/\s+/g, " ").trim();
+      let retrieved = false;
+      // Prefer a configured search provider when available; DuckDuckGo is the no-key fallback.
+      const tavilyKey = Deno.env.get("TAVILY_API_KEY");
+      if (tavilyKey) {
+        try {
+          const searchRes = await fetch("https://api.tavily.com/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ api_key: tavilyKey, query, topic: /news|headlines|today|this week|latest/i.test(query) ? "news" : "general", search_depth: "basic", max_results: 6, include_answer: false }),
+            signal: AbortSignal.timeout(12000),
+          });
+          if (searchRes.ok) {
+            const data = await searchRes.json();
+            for (const item of (data.results || []).slice(0, 6)) {
+              webNotes.push("Search result: " + String(item.title || "") + "\nURL: " + String(item.url || "") + "\nPublished: " + String(item.published_date || "not provided") + "\nSnippet: " + String(item.content || "").slice(0, 1200));
             }
-            webNotes.push("Search result: " + clean(links[i][2]) + "\nURL: " + href + "\nSnippet: " + (snippets[i] || ""));
-          }
+            retrieved = webNotes.length > 0;
+          } else console.error("Tavily search failed:", searchRes.status);
+        } catch (e) { console.error("Tavily search error:", e instanceof Error ? e.message : String(e)); }
+      }
+      if (!retrieved) {
+        for (const endpoint of [
+          "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(query),
+          "https://lite.duckduckgo.com/lite/?q=" + encodeURIComponent(query),
+        ]) {
+          try {
+            const searchRes = await fetch(endpoint, {
+              headers: { "User-Agent": "Mozilla/5.0 (compatible; VEXAI/1.0)", "Accept": "text/html" },
+              signal: AbortSignal.timeout(10000),
+            });
+            if (!searchRes.ok) continue;
+            const html = await searchRes.text();
+            const links = [...html.matchAll(/<a\b[^>]*class=["'][^"']*(?:result__a|result-link)[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)];
+            for (const match of links.slice(0, 6)) {
+              let href = match[1].replace(/&amp;/g, "&");
+              if (href.startsWith("//")) href = "https:" + href;
+              if (href.startsWith("/")) { try { href = new URL(href, endpoint).toString(); } catch { continue; } }
+              if (/duckduckgo\.com\/l\/\?/.test(href)) {
+                try { const parsed = new URL(href); href = parsed.searchParams.get("uddg") || href; } catch {}
+              }
+              if (!/^https?:\/\//i.test(href)) continue;
+              const block = html.slice(Math.max(0, match.index! - 300), Math.min(html.length, match.index! + match[0].length + 1200));
+              const snippetMatch = block.match(/class=["'][^"']*(?:result__snippet|result-snippet|snippet)[^"']*["'][^>]*>([\s\S]*?)<\/(?:a|div|td)>/i);
+              webNotes.push("Search result: " + clean(match[2]) + "\nURL: " + href + "\nSnippet: " + (snippetMatch ? clean(snippetMatch[1]) : ""));
+            }
+            if (webNotes.length) { retrieved = true; break; }
+          } catch (e) { console.error("DuckDuckGo search failed:", e instanceof Error ? e.message : String(e)); }
         }
-      } catch (e) { console.error("Web search failed:", e instanceof Error ? e.message : String(e)); }
+      }
     }
     for (const rawUrl of urls) {
       try {
@@ -190,7 +227,7 @@ GENERAL RESPONSE STYLE:
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
         signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
-          model: "openai/gpt-oss-20b",
+          model: images.length ? "meta-llama/llama-4-scout-17b-16e-instruct" : "openai/gpt-oss-20b",
           messages,
           temperature: 0.7,
           max_completion_tokens: 1800,
