@@ -52,60 +52,53 @@ Deno.serve(async (req) => {
     let lastError = "Unknown Gemini error";
     let sawHighDemand = false;
 
-    // Retry transient overload/rate-limit errors with exponential backoff,
-    // then try a secondary stable model if the primary remains unavailable.
+    // One bounded request per model: primary, then one fallback. Each request
+    // is aborted after 8 seconds so a stalled provider cannot hang indefinitely.
     for (const model of models) {
-      let shouldTryFallback = false;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=` + encodeURIComponent(apiKey),
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                systemInstruction,
-                contents,
-                generationConfig: { temperature: 0.7, maxOutputTokens: 1800 },
-              }),
-            },
-          );
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      try {
+        response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=` + encodeURIComponent(apiKey),
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
+            body: JSON.stringify({
+              systemInstruction,
+              contents,
+              generationConfig: { temperature: 0.7, maxOutputTokens: 1800 },
+            }),
+          },
+        );
 
-          result = await response.json().catch(() => ({}));
-          if (response.ok) break;
+        result = await response.json().catch(() => ({}));
+        if (response.ok) break;
 
-          const status = response.status;
-          lastError = result?.error?.message ?? `HTTP ${status}`;
-          if (/high demand|overload|resource exhausted|temporarily unavailable/i.test(lastError)) sawHighDemand = true;
-          const transient = status === 408 || status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
-          if (!transient) {
-            // Try the fallback model for model availability/capacity errors,
-            // but don't retry permanent authentication or malformed requests.
-            shouldTryFallback = status === 404 || status === 503 || /high demand|overload|unavailable|not available/i.test(lastError);
-            break;
-          }
-          if (attempt < 2) {
-            const delayMs = 1000 * (2 ** attempt) + Math.floor(Math.random() * 300);
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
-          } else {
-            shouldTryFallback = true;
-          }
-        } catch (error) {
-          lastError = error instanceof Error ? error.message : String(error);
-          if (attempt < 2) {
-            const delayMs = 1000 * (2 ** attempt) + Math.floor(Math.random() * 300);
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
-          } else {
-            shouldTryFallback = true;
-          }
+        const status = response.status;
+        lastError = result?.error?.message ?? `HTTP ${status}`;
+        if (/high demand|overload|resource exhausted|temporarily unavailable/i.test(lastError) || status === 429 || status === 503) {
+          sawHighDemand = true;
         }
-      }
 
-      if (response?.ok) break;
-      console.error(`Gemini model ${model} failed:`, lastError);
-      if (!shouldTryFallback) break;
-      response = null;
-      result = null;
+        // Only try the fallback for capacity, timeout, server, or model-not-found errors.
+        const canFallback = status === 408 || status === 429 || status === 500 ||
+          status === 502 || status === 503 || status === 504 || status === 404 ||
+          /high demand|overload|unavailable|not available/i.test(lastError);
+        if (!canFallback) break;
+        response = null;
+        result = null;
+      } catch (error) {
+        lastError = error instanceof Error
+          ? (error.name === "AbortError" ? "Gemini request timed out after 8 seconds." : error.message)
+          : String(error);
+        sawHighDemand = true;
+        response = null;
+        result = null;
+        // The next loop iteration is the single fallback attempt.
+      } finally {
+        clearTimeout(timeout);
+      }
     }
 
     if (!response?.ok) {
