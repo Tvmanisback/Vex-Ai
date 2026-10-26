@@ -82,10 +82,10 @@ function CodeBlock({ language, code, children }) {
 function ProjectZipButton({ text }) {
   const [busy, setBusy] = useState(false);
   const files = [];
-  const pattern = /(?:^|\\n)(?:\\*\\*|###?\\s*)?(?:File:\\s*)?([\\x60][^\\n\\x60]+[\\x60]|[A-Za-z0-9_.@/-]+\\.[A-Za-z0-9_-]+)(?:\\*\\*)?\\s*\\n\\x60\\x60\\x60([\\w.+-]*)\\s*\\n([\\s\\S]*?)\\n\\x60\\x60\\x60/g;
+  const pattern = /(?:^|\n)(?:\*\*|###?\s*)?(?:File:\s*)?([\x60][^\n\x60]+[\x60]|[A-Za-z0-9_.@/-]+\.[A-Za-z0-9_-]+)(?:\*\*)?\s*\n\x60\x60\x60([\w.+-]*)\s*\n([\s\S]*?)\n\x60\x60\x60/g;
   let match;
   while ((match = pattern.exec(text)) !== null) {
-    const filename = match[1].replace(/^\\x60|\\x60$/g, '').trim();
+    const filename = match[1].replace(/^\x60|\x60$/g, '').trim();
     if (!filename || filename.includes(' ') || filename.startsWith('http')) continue;
     files.push({ filename, content: match[3] });
   }
