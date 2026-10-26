@@ -11,15 +11,24 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
--- Users may read their own profile only. Profile creation/updates happen through
--- the trusted auth trigger, not direct client inserts.
--- Drop first so this setup script can safely be run more than once.
-drop policy if exists "Users can read their own profile" on public.profiles;
-create policy "Users can read their own profile"
-  on public.profiles for select
-  to authenticated
-  using (auth.uid() = id);
-
+-- Users may read their own profile only. Keep this idempotent because
+-- the policy may already exist in projects where this schema is being rerun.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'profiles'
+      and policyname = 'Users can read their own profile'
+  ) then
+    execute 'create policy "Users can read their own profile"
+      on public.profiles for select
+      to authenticated
+      using (auth.uid() = id)';
+  end if;
+end
+$$;
 create or replace function public.create_profile_for_new_user()
 returns trigger
 language plpgsql
