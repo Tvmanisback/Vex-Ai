@@ -36,7 +36,7 @@
     const fail = (error) => {
       console.error('VEX AI startup failed:', error);
       document.getElementById('boot-error').style.display = 'block';
-      document.getElementById('boot-error-text').textContent = 'The app could not load its files or required libraries. Check your connection, reload, or open the troubleshooting page.';
+      document.getElementById('boot-error-text').textContent = 'The app could not start: ' + (error?.message || String(error)) + '. Check your connection, reload, or open the troubleshooting page.';
       root.style.display = 'none';
     };
     try {
