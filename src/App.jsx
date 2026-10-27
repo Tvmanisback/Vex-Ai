@@ -488,7 +488,6 @@ function ChatApp({ session }) {
           });
           if (typeof titleData?.title === 'string' && titleData.title.trim()) chatTitle = titleData.title.trim().slice(0, 64);
         } catch (_) {
-          // Saving still works with a short fallback title if title generation is unavailable.
         }
       }
       await saveChat(chatId, chatTitle, completedMessages);
@@ -506,7 +505,6 @@ function ChatApp({ session }) {
         }
       } catch (_) {}
       setError(message);
-      // Keep the user's message in history even if the AI request failed.
       await saveChat(chatId, chatTitle, nextMessages);
     } finally { setSending(false); inputRef.current?.focus(); }
   }
@@ -613,7 +611,6 @@ export default function App() {
     const refreshToken = fragment.get('refresh_token');
     const isYapinCallback = Boolean(accessToken && refreshToken);
     if (isYapinCallback) {
-      // Remove OAuth tokens from the address bar immediately.
       window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
       supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
         .then(({ data, error }) => {
