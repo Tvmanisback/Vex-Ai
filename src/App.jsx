@@ -106,7 +106,7 @@ function ProjectZipButton({ text }) {
         setZipUrl(createdUrl);
         setFileCount(files.length);
       } catch (e) {
-        console.error('VEX project ZIP creation failed:', e);
+        console.error('Project archive creation failed:', e);
         if (active) setError('VEX could not package this project into a ZIP. Please try asking again.');
       }
     }
@@ -119,7 +119,7 @@ function ProjectZipButton({ text }) {
   if (!zipUrl && !error) return null;
   if (error) return <div className="project-download" role="status">{error}</div>;
   return <div className="project-download" role="status">
-    <div className="project-zip-message"><FileArchive size={18}/><span><strong>I made the ZIP for you!</strong><small>{fileCount} project files packaged and ready.</small></span></div>
+    <div className="project-zip-message"><FileArchive size={18}/><span><strong>Project archive is ready</strong><small>{fileCount} project files packaged and ready.</small></span></div>
     <a className="copy-code-button project-zip-link" href={zipUrl} download="vex-project.zip"><Download size={14}/> Download vex-project.zip</a>
   </div>;
 }
