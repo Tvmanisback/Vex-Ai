@@ -34,8 +34,6 @@ Deno.serve(async (req) => {
       }
     }
     if (!message || message.length > 120000) return json({ error: "Your message and attached files exceed the 120,000-character limit." }, 400);
-
-    // Lightweight web access: search public web results and fetch explicitly supplied public URLs.
     const wantsSearch = /\b(search|browse|look up|find online|latest|current|recent|today|this week|headlines?|news|internet|on the web|web search|what happened|release notes|price of|weather|who won)\b/i.test(message);
     const urls = [...message.matchAll(/https?:\/\/[^\s<>"')\]]+/gi)].map(m => m[0].replace(/[.,!?;]+$/, '')).slice(0, 2);
     const webNotes: string[] = [];
@@ -50,10 +48,8 @@ Deno.serve(async (req) => {
         .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
         .replace(/\s+/g, " ").trim();
       let retrieved = false;
-      // Prefer a configured search provider when available; DuckDuckGo is the no-key fallback.
       const tavilyKey = Deno.env.get("TAVILY_API_KEY");
       if (tavilyKey) {
-        // Try several focused searches instead of sending a long natural-language request as one query.
         const domainMatch = query.match(/(?:^|\\s)([a-z0-9-]+\\.[a-z]{2,}(?:\\.[a-z]{2,})?)/i);
         const domain = domainMatch?.[1] || "";
         const tavilyQueries = [...new Set([
@@ -185,7 +181,6 @@ REAL-TIME WEB SEARCH AND WEBSITE READING:
 
 IMAGE UNDERSTANDING:
 - When images are attached, inspect the actual image content with the vision model. Describe only what is visible and answer the user's question about it.
-
 
 UI, VISUAL DESIGN, AND FRONTEND QUALITY:
 - When the user asks for a website, web app, UI, landing page, dashboard, chat demo, or visual prototype, treat visual quality as a first-class requirement—not an afterthought. Produce a polished, intentional design rather than a bare HTML form or default browser styling.
