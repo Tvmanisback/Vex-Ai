@@ -11,67 +11,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script type="importmap">
-  {
-    "imports": {
-      "react": "https://esm.sh/react@19.0.0",
-      "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
-      "react-dom/client": "https://esm.sh/react-dom@19.0.0/client?external=react",
-      "lucide-react": "https://esm.sh/lucide-react@0.468.0?external=react",
-      "react-markdown": "https://esm.sh/react-markdown@10.1.0?external=react",
-      "remark-gfm": "https://esm.sh/remark-gfm@4.0.1",
-      "jszip": "https://esm.sh/jszip@3.10.1",
-      "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.57.0"
-    }
-  }
-  </script>
 </head>
 <body>
   <div id="root"></div>
   <noscript><main style="font-family:system-ui;padding:2rem;background:#070b14;color:#eef4ff;min-height:100vh"><h1>VEX AI</h1><p>Enable JavaScript to use VEX AI.</p><p><a style="color:#9dd4ff" href="./help.html">Open the help center</a></p></main></noscript>
-  <div id="boot-error" style="display:none;max-width:700px;margin:10vh auto;padding:24px;font:15px/1.6 system-ui;color:#eef4ff;background:#0d1627;border:1px solid #293953;border-radius:14px"><h1>VEX AI couldn't load</h1><p id="boot-error-text">Check your connection and reload the page.</p><p><a style="color:#9dd4ff" href="./help.html">Open the help center</a> · <a style="color:#9dd4ff" href="./troubleshooting.html">Troubleshooting</a></p></div>
-  <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
-  <script type="module">
-    const root = document.getElementById('root');
-    const fail = (error) => {
-      console.error('VEX AI startup failed:', error);
-      document.getElementById('boot-error').style.display = 'block';
-      document.getElementById('boot-error-text').textContent = 'The app could not start: ' + (error?.message || String(error)) + '. Check your connection, reload, or open the troubleshooting page.';
-      root.style.display = 'none';
-    };
-    try {
-      if (!window.Babel) throw new Error('The JSX compiler did not load.');
-      const get = async (path) => {
-        const response = await fetch('./' + path + '?v=pages-runtime-1', { cache: 'no-store' });
-        if (!response.ok) throw new Error('Could not load ' + path + ' (' + response.status + ')');
-        return response.text();
-      };
-      const [mainSource, appSource, supabaseSource, css] = await Promise.all([
-        get('src/main.jsx'), get('src/App.jsx'), get('src/lib/supabase.js'), get('src/styles.css')
-      ]);
-      const style = document.createElement('style');
-      style.textContent = css;
-      document.head.appendChild(style);
-      const transpile = (source, filename) => Babel.transform(source, {
-        filename,
-        presets: [['react', { runtime: 'automatic' }]],
-        sourceType: 'module',
-        comments: false
-      }).code;
-      const supabaseJs = supabaseSource
-        .replace(/import\.meta\.env\.VITE_SUPABASE_URL/g, 'undefined')
-        .replace(/import\.meta\.env\.VITE_SUPABASE_ANON_KEY/g, 'undefined');
-      const supabaseUrl = URL.createObjectURL(new Blob([transpile(supabaseJs, 'supabase.js')], { type: 'text/javascript' }));
-      const appJs = transpile(appSource, 'App.jsx').replaceAll("'./lib/supabase'", JSON.stringify(supabaseUrl)).replaceAll('"./lib/supabase"', JSON.stringify(supabaseUrl));
-      const appUrl = URL.createObjectURL(new Blob([appJs], { type: 'text/javascript' }));
-      const mainJs = transpile(mainSource, 'main.jsx')
-        .replaceAll("'./App.jsx'", JSON.stringify(appUrl)).replaceAll('"./App.jsx"', JSON.stringify(appUrl))
-        .replace(/import\s+['"]\.\/styles\.css['"];?/g, '');
-      const mainUrl = URL.createObjectURL(new Blob([mainJs], { type: 'text/javascript' }));
-      await import(mainUrl);
-    } catch (error) {
-      fail(error);
-    }
-  </script>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
