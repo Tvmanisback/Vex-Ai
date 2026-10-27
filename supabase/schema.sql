@@ -1,5 +1,3 @@
--- VEX AI profile table and safe username constraints.
--- Supabase Auth stores password hashes; never create your own password column.
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -10,9 +8,6 @@ create table if not exists public.profiles (
 );
 
 alter table public.profiles enable row level security;
-
--- Users may read their own profile only. Keep this idempotent because
--- the policy may already exist in projects where this schema is being rerun.
 do $$
 begin
   if not exists (
@@ -49,8 +44,6 @@ begin
     safe_username := 'vex_' || substr(replace(new.id::text, '-', ''), 1, 8);
   end if;
   safe_username := substr(safe_username, 1, 24);
-
-  -- Avoid signup failures for duplicate usernames created via OAuth.
   if exists (select 1 from public.profiles p where lower(p.username) = lower(safe_username)) then
     safe_username := substr(safe_username, 1, 15) || '_' || substr(replace(new.id::text, '-', ''), 1, 8);
   end if;
@@ -66,12 +59,6 @@ drop trigger if exists on_auth_user_created_profile on auth.users;
 create trigger on_auth_user_created_profile
   after insert on auth.users
   for each row execute procedure public.create_profile_for_new_user();
-
--- Prevent users from changing username to someone else's username.
--- Add future profile fields with explicit RLS policies rather than opening the table.
-
-
--- Saved conversations: each user's chats are private and persist across devices.
 create table if not exists public.conversations (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
