@@ -243,20 +243,20 @@ function AuthScreen() {
       <div className="auth-topbrand"><OrbitMark /><span>VEX AI</span></div>
       <div className="art-center">
         <div className="hero-orbit"><OrbitMark /></div>
-        <p className="eyebrow"><span className="live-dot" /> YOUR SPACE TO THINK BIGGER</p>
-        <h1>Meet your next<br /><span>great idea.</span></h1>
-        <p className="art-copy">A little clarity. A lot of possibility.<br />All in one intelligent space.</p>
+        <p className="eyebrow"><span className="live-dot" /> A CLEARER PLACE TO WORK</p>
+        <h1>Make room for<br /><span>good ideas.</span></h1>
+        <p className="art-copy">Think things through, make a plan, and get moving.</p>
       </div>
-      <div className="art-footer"><span>VEX AI</span><span>ONE INTELLIGENCE. ENDLESS POSSIBILITIES.</span></div>
+      <div className="art-footer"><span>VEX AI</span><span>A TOOL FOR THE WORK AHEAD.</span></div>
     </section>
     <section className="auth-panel">
       <div className="mobile-brand"><OrbitMark small /><b>VEX AI</b></div>
       <div className="auth-card">
         <div className="auth-heading">
           <div className="mini-mark"><OrbitMark small /></div>
-          <p className="eyebrow">WELCOME TO VEX</p>
+          <p className="eyebrow">WELCOME BACK</p>
           <h2>{mode === 'login' ? 'Good to see you.' : 'Make yourself at home.'}</h2>
-          <p className="muted">{mode === 'login' ? 'Sign in to pick up where your mind left off.' : 'Create your account and meet your new AI.'}</p>
+          <p className="muted">{mode === 'login' ? 'Sign in to continue where you left off.' : 'Create an account to get started.'}</p>
         </div>
         <div className="auth-tabs" role="tablist">
           <button className={mode === 'login' ? 'active' : ''} onClick={() => changeMode('login')} type="button">Log in</button>
@@ -578,9 +578,9 @@ function ChatApp({ session }) {
       <div className={`conversation ${messages.length ? 'has-messages' : ''}`}>
         {messages.length === 0 ? <div className="welcome">
           <div className="welcome-emblem"><OrbitMark/></div>
-          <p className="eyebrow"><span className="live-dot"/> YOUR AI, YOUR PACE</p>
+          <p className="eyebrow"><span className="live-dot"/> WHAT CAN WE WORK ON?</p>
           <h1>Hey {username},<br/><span>what's on your mind?</span></h1>
-          <p className="welcome-copy">I'm VEX. Let's untangle a problem, learn something new,<br className="desktop-break"/> or turn that idea into something real.</p>
+          <p className="welcome-copy">I can help you work through a problem, learn something new,<br className="desktop-break"/> or get a project moving.</p>
           <div className="suggestion-grid">{suggestions.map(({icon: Icon, title, text}) => <button className="suggestion-card" key={title} onClick={() => { setInput(title === 'Help me code' ? 'Help me with a coding project.' : title === 'Learn something' ? 'Teach me something interesting, step by step.' : title === 'Get work done' ? 'Help me plan my tasks for today.' : 'Help me brainstorm a creative idea.'); inputRef.current?.focus(); }}><span className="suggestion-icon"><Icon size={18}/></span><b>{title}</b><small>{text}</small></button>)}</div>
         </div> : <div className="message-list">{messages.map((m,i) => <div className={`message-row ${m.role}`} key={i}><div className="message-avatar">{m.role === 'assistant' ? <OrbitMark small/> : username.slice(0,1).toUpperCase()}</div><div className="message-body"><div className="message-name">{m.role === 'assistant' ? 'VEX AI' : username}</div><div className={"message-text markdown-content " + (m.role === 'user' ? 'user-markdown' : '')}>{m.attachments?.length > 0 && <div className="attached-message-files">{m.attachments.map(name => <span key={name}><Paperclip size={12}/>{name}</span>)}</div>}{m.role === 'assistant' && <ProjectZipButton text={m.text} />}<ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                     pre: ({ children, ...props }) => {
