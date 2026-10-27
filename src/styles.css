@@ -248,3 +248,66 @@ body { background: var(--bg); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+.conversation:not(.has-messages){justify-content:flex-start;padding-top:clamp(54px,10vh,118px)}
+.welcome{max-width:760px;align-self:flex-start;margin:0 auto 0 clamp(24px,6vw,92px)}
+.welcome-heading{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.welcome-rule{display:block;width:22px;height:2px;background:#8ecbff;border-radius:0}
+.welcome-kicker{margin:0;color:#8fa5c4;font-size:10px;font-weight:650;letter-spacing:1.2px}
+.welcome-emblem{display:none}
+.welcome h1{font-family:'DM Sans',sans-serif;font-size:clamp(36px,4vw,48px);font-weight:600;line-height:1.12;letter-spacing:-1.8px;margin:0 0 15px;color:#edf3ff}
+.welcome h1 span{background:none;color:#a9c9ed;-webkit-text-fill-color:initial}
+.welcome-copy{font-size:14px;line-height:1.65;color:#98a8bf;margin:0}
+.suggestion-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin-top:31px;border-top:1px solid #26364c;border-left:1px solid #26364c}
+.suggestion-card{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr) 16px;align-items:center;column-gap:12px;min-height:84px;padding:15px 14px;border:0;border-right:1px solid #26364c;border-bottom:1px solid #26364c;border-radius:0;background:#0c1421;transition:background .15s}
+.suggestion-card:hover{background:#132138;border-color:#344a66;transform:none}
+.suggestion-icon{width:30px;height:30px;display:grid;place-items:center;background:transparent;color:#9bc9f5;border:1px solid #2b405a;border-radius:7px}
+.suggestion-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
+.suggestion-card b{font-size:12px;font-weight:650;color:#e5edf9}
+.suggestion-card small{font-size:11px;line-height:1.45;color:#8c9db6}
+.suggestion-arrow{font-size:15px;color:#7188a8;align-self:start;justify-self:end}
+.suggestion-card:hover .suggestion-arrow{color:#b6d9fa}
+.composer-wrap{padding-top:12px}
+.composer{border-radius:10px}
+.auth-art{background:#0a101b}
+.art-grid{display:none}
+.hero-orbit{width:150px;height:150px;background:#101d30;border-radius:50%;box-shadow:none;margin-bottom:26px}
+.hero-orbit .orbit-mark{transform:scale(1.45)}
+.art-center h1{font-size:clamp(42px,4vw,56px);letter-spacing:-2px}
+.art-center h1 span{background:none;color:#a9c9ed;-webkit-text-fill-color:initial}
+.art-copy{max-width:300px}
+.auth-topbrand{letter-spacing:1.2px}
+.auth-panel{background:#0b1019}
+.auth-heading h2{font-weight:600;letter-spacing:-.8px}
+.mini-mark{border-radius:10px}
+@media(max-width:1000px){
+  .welcome{margin-left:clamp(20px,4vw,42px)}
+  .suggestion-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .conversation:not(.has-messages){padding:42px 18px 18px}
+  .welcome{margin:0;width:100%;max-width:none}
+  .welcome-heading{margin-bottom:15px}
+  .welcome h1{font-size:clamp(34px,9vw,43px);letter-spacing:-1.5px}
+  .welcome-copy{font-size:13px}
+  .suggestion-grid{margin-top:25px;grid-template-columns:1fr}
+  .suggestion-card{min-height:72px;padding:12px 11px}
+  .suggestion-card b{font-size:12px}
+  .suggestion-card small{font-size:10px}
+}
+@media(max-width:390px){
+  .conversation:not(.has-messages){padding-left:14px;padding-right:14px}
+  .suggestion-card{grid-template-columns:29px minmax(0,1fr) 12px;column-gap:9px}
+}
+.theme-light .welcome h1{color:#1d2d45}
+.theme-light .welcome h1 span{background:none;color:#4778ad;-webkit-text-fill-color:initial}
+.theme-light .welcome-kicker{color:#6c7f9a}
+.theme-light .suggestion-grid{border-color:#d4dfef}
+.theme-light .suggestion-card{background:#f9fbff;border-color:#d4dfef}
+.theme-light .suggestion-card:hover{background:#edf3fc}
+.theme-light .suggestion-card b{color:#243753}
+.theme-light .suggestion-card small{color:#6d7f99}
+.theme-light .suggestion-icon{border-color:#d4dfef;color:#4979b0}
+.theme-light .suggestion-arrow{color:#7186a5}
+.theme-light .welcome-rule{background:#4c83bd}
+@media(prefers-reduced-motion:reduce){.suggestion-card{transition:none}}
