@@ -275,3 +275,60 @@ body{background:var(--bg)}
 .theme-light .suggestion-card{background:#fff;box-shadow:none}
 .theme-light .composer{box-shadow:none}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+
+/* Refined workspace styling */
+:root {
+  --bg: #0b0e13;
+  --panel: #111720;
+  --panel2: #151d28;
+  --line: rgba(170, 187, 210, .14);
+  --muted: #929eaf;
+  --text: #edf1f7;
+  --blue: #a8c5e8;
+  --cyan: #a8d6d0;
+  --violet: #b8b0df;
+}
+body { background: var(--bg); }
+.auth-art {
+  background: radial-gradient(ellipse at 46% 42%, #172231 0, #101720 42%, #0b0e13 78%);
+}
+.art-grid { opacity: .09; background-size: 64px 64px; }
+.hero-orbit { box-shadow: 0 0 65px #7894bb12; background: radial-gradient(circle, #26384c70, #111a2700 72%); }
+.orbit-core { background: radial-gradient(circle at 30% 25%, #f6f8fc 0, #c5d8eb 20%, #829fca 55%, #4d527c 100%); box-shadow: 0 0 14px #8aaad044, 0 0 28px #7185b322; }
+.orbit-ring { border-color: #b2c7e080; }
+.orbit-ring-two { border-color: #a6a0d35c; }
+.brand-ai, .vex-mini b { color: #b8cde8; }
+.art-center h1 span, .welcome h1 span { background: linear-gradient(100deg, #f3f5f8 0%, #b9cde5 55%, #c0b9df 100%); background-clip: text; -webkit-background-clip: text; color: transparent; }
+.eyebrow { color: #a2afc2; letter-spacing: 1.5px; }
+.live-dot { background: #9bc9be; box-shadow: none; }
+.auth-panel { background: linear-gradient(145deg, #0d1219, #0b0e13); }
+.mini-mark, .welcome-emblem { border-color: #8fa8c01c; background: linear-gradient(145deg, #1b2735, #121923); box-shadow: none; }
+.auth-tabs { background: #0a0e13; border-color: #252d39; }
+.auth-tabs button.active { background: #202a37; box-shadow: none; }
+.primary-button { background: #c7d7e8; color: #101720; box-shadow: none; }
+.primary-button:hover { filter: brightness(1.05); }
+.app-shell { background: #0b0e13; }
+.sidebar { background: #0d1117; }
+.new-chat { background: #171f2a; border-color: #2b3543; }
+.new-chat:hover { background: #202b39; }
+.chat-area { background: #0d1117; }
+.app-header { background: #0d1117e8; }
+.header-icon, .menu-button { background: #151c26; }
+.welcome-emblem { border-radius: 20px; }
+.suggestion-card { background: #111720; border-color: #27313e; box-shadow: none; }
+.suggestion-card:hover { background: #171f2a; border-color: #52657b; transform: translateY(-1px); }
+.suggestion-icon { color: #b9cce4; background: #8fa8c012; }
+.composer { background: #111720; border-color: #303b4a; box-shadow: 0 8px 28px #00000018; }
+.composer:focus-within { border-color: #7189a6; }
+.send-button { background: #c7d7e8; color: #111720; }
+.message-avatar { background: #1a2431; }
+.message-row.assistant .message-avatar { border-color: #8fa8c020; background: #141d28; }
+.plan-card { background: #131b26; border-color: #27313e; }
+.plan-icon { background: #b8b0df12; color: #c4bde7; }
+.profile-menu { background: #141b25; border-color: #303b49; }
+.input-wrap:focus-within { border-color: #819ab8; box-shadow: 0 0 0 3px #819ab80e; }
+.google-button:hover { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
