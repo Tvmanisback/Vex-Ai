@@ -11,10 +11,10 @@ import { Copy, Download, FileArchive } from 'lucide-react';
 import JSZip from 'jszip';
 
 const suggestions = [
-  { icon: Code2, title: 'Help me code', text: 'Debug code, explain concepts, and build projects.' },
-  { icon: GraduationCap, title: 'Learn something', text: 'Understand a topic step by step.' },
-  { icon: BriefcaseBusiness, title: 'Get work done', text: 'Plan tasks, write, and organize ideas.' },
-  { icon: Sparkles, title: 'Explore an idea', text: 'Brainstorm something new and creative.' },
+  { icon: Code2, title: 'Help me code', text: 'Fix a bug or start a new project.' },
+  { icon: GraduationCap, title: 'Learn something', text: 'Get a clear explanation of something.' },
+  { icon: BriefcaseBusiness, title: 'Get work done', text: 'Draft, plan, or sort out your next steps.' },
+  { icon: Sparkles, title: 'Explore an idea', text: 'Explore an idea or find a fresh angle.' },
 ];
 
 function CodeBlock({ language, code, children }) {
@@ -578,9 +578,9 @@ function ChatApp({ session }) {
       <div className={`conversation ${messages.length ? 'has-messages' : ''}`}>
         {messages.length === 0 ? <div className="welcome">
           <div className="welcome-emblem"><OrbitMark/></div>
-          <p className="eyebrow"><span className="live-dot"/> WHAT CAN WE WORK ON?</p>
-          <h1>Hey {username},<br/><span>what's on your mind?</span></h1>
-          <p className="welcome-copy">I can help you work through a problem, learn something new,<br className="desktop-break"/> or get a project moving.</p>
+          <p className="eyebrow"><span className="live-dot"/> YOUR WORKSPACE</p>
+          <h1>Hey {username},<br/><span>what are you working on?</span></h1>
+          <p className="welcome-copy">Ask a question, work on a draft, or pick up where you left off.</p>
           <div className="suggestion-grid">{suggestions.map(({icon: Icon, title, text}) => <button className="suggestion-card" key={title} onClick={() => { setInput(title === 'Help me code' ? 'Help me with a coding project.' : title === 'Learn something' ? 'Teach me something interesting, step by step.' : title === 'Get work done' ? 'Help me plan my tasks for today.' : 'Help me brainstorm a creative idea.'); inputRef.current?.focus(); }}><span className="suggestion-icon"><Icon size={18}/></span><b>{title}</b><small>{text}</small></button>)}</div>
         </div> : <div className="message-list">{messages.map((m,i) => <div className={`message-row ${m.role}`} key={i}><div className="message-avatar">{m.role === 'assistant' ? <OrbitMark small/> : username.slice(0,1).toUpperCase()}</div><div className="message-body"><div className="message-name">{m.role === 'assistant' ? 'VEX AI' : username}</div><div className={"message-text markdown-content " + (m.role === 'user' ? 'user-markdown' : '')}>{m.attachments?.length > 0 && <div className="attached-message-files">{m.attachments.map(name => <span key={name}><Paperclip size={12}/>{name}</span>)}</div>}{m.role === 'assistant' && <ProjectZipButton text={m.text} />}<ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                     pre: ({ children, ...props }) => {
